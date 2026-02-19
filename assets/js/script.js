@@ -329,3 +329,66 @@ function updatePageInfo(pageData) {
     `الجزء ${pageData.jozz} - صفحة ${state.currentPage}`;
 }
 
+// ─── Ayah Selection ───────────────────────────────────────────────────────────
+
+/**
+ * Set the current ayah, sync all UI selectors, persist to storage,
+ * and optionally trigger playback.
+ */
+function setCurrentAyah(ayahData, { play = false } = {}) {
+  state.currentAyah = ayahData;
+  state.currentSura = ayahData.sura_no;
+
+  getEl('surah-select').value = ayahData.sura_no;
+  getEl('ayah-select').value = ayahData.aya_no;
+  updatePageInfo(ayahData);
+
+  saveSetting('currentSura', ayahData.sura_no);
+  saveSetting('currentAyah', ayahData.aya_no);
+
+  activateAyahInDOM(ayahData.sura_no, ayahData.aya_no);
+
+  if (play) playAudio();
+}
+
+/** Select an ayah and immediately start playback */
+function selectAndPlayAyah(ayahData) {
+  if (state.isPlaying) stopAudio();
+  setCurrentAyah(ayahData, { play: true });
+}
+
+/** Handle a click on a rendered ayah span — toggle play/pause or start new */
+function handleAyahClickWithToggle(e, ayah) {
+  const isSameAyah =
+    state.currentAyah &&
+    state.currentAyah.sura_no === ayah.sura_no &&
+    state.currentAyah.aya_no === ayah.aya_no;
+
+  const hasAudioLoaded =
+    state.audioPlayer && state.audioPlayer.src && state.audioPlayer.src !== '';
+
+  if (isSameAyah && hasAudioLoaded) {
+    togglePauseResume();
+  } else {
+    setCurrentAyah(ayah);
+    setTimeout(() => playAudio(), 100);
+  }
+}
+
+/** Navigate to and highlight the first ayah of a surah without triggering playback */
+function selectFirstAyahOfSurah(suraNo) {
+  const firstAyah = state.quranData.find(
+    (item) => item.sura_no === suraNo && item.aya_no === 1,
+  );
+
+  if (!firstAyah) return;
+
+  state.currentAyah = firstAyah;
+  state.currentSura = suraNo;
+  getEl('ayah-select').value = 1;
+  updatePageInfo(firstAyah);
+  saveSetting('currentAyah', 1);
+
+  setTimeout(() => activateAyahInDOM(suraNo, 1), 100);
+}
+
