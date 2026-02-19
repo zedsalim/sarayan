@@ -114,6 +114,7 @@ function showToast(message) {
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadQuranData();
+  initializeSelectors();
 });
 
 // ─── Data Loading ─────────────────────────────────────────────────────────────
@@ -127,6 +128,82 @@ async function loadQuranData() {
   } catch (error) {
     console.error('Error loading Quran data:', error);
     showToast('خطأ في تحميل بيانات القرآن الكريم');
+  }
+}
+
+// ─── Selectors ────────────────────────────────────────────────────────────────
+
+function initializeSelectors() {
+  populateSurahSelector();
+  populateJuzSelector();
+  populatePageSelector();
+}
+
+function populateSurahSelector() {
+  const surahSelect = getEl('surah-select');
+  const surahs = [
+    ...new Map(state.quranData.map((item) => [item.sura_no, item])).values(),
+  ];
+
+  surahs.forEach((sura) => {
+    const option = document.createElement('option');
+    option.value = sura.sura_no;
+    option.textContent = `${sura.sura_no}. ${sura.sura_name_ar}`;
+    surahSelect.appendChild(option);
+  });
+
+  const savedSurah = localStorage.getItem('currentSura') || '1';
+  surahSelect.value = savedSurah;
+  state.currentSura = parseInt(savedSurah);
+}
+
+function populateJuzSelector() {
+  const juzSelect = getEl('juz-select');
+
+  for (let i = 1; i <= 30; i++) {
+    const option = document.createElement('option');
+    option.value = i;
+    option.textContent = `الجزء ${i}`;
+    juzSelect.appendChild(option);
+  }
+
+  const savedJuz = localStorage.getItem('currentJuz') || '1';
+  juzSelect.value = savedJuz;
+}
+
+function populatePageSelector() {
+  const pageSelect = getEl('page-select');
+
+  for (let i = 1; i <= TOTAL_PAGES; i++) {
+    const option = document.createElement('option');
+    option.value = i;
+    option.textContent = `صفحة ${i}`;
+    pageSelect.appendChild(option);
+  }
+
+  const savedPage = localStorage.getItem('currentPage') || '1';
+  pageSelect.value = savedPage;
+}
+
+function populateAyahSelector(suraNo) {
+  const ayahSelect = getEl('ayah-select');
+  ayahSelect.innerHTML = '<option value="">اختر الآية</option>';
+
+  state.quranData
+    .filter((item) => item.sura_no == suraNo)
+    .forEach((ayah) => {
+      const option = document.createElement('option');
+      option.value = ayah.aya_no;
+      option.textContent = `آية ${ayah.aya_no}`;
+      ayahSelect.appendChild(option);
+    });
+}
+
+/** Sync sidebar dropdowns to match the current ayah */
+function updateSidebarSelectors() {
+  if (state.currentAyah) {
+    getEl('surah-select').value = state.currentAyah.sura_no;
+    getEl('ayah-select').value = state.currentAyah.aya_no;
   }
 }
 
