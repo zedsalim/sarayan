@@ -156,6 +156,8 @@ body {
   margin: 0;
 }
 
+/* ── Quran Text ────────────────────────────────────────────────────────────── */
+
 .quran-text-container {
   flex: 1;
   min-height: 0;
@@ -164,4 +166,78 @@ body {
   overscroll-behavior: contain;
   padding: 30px 15px;
   background: linear-gradient(to bottom, #f4ecd8, #ede3cf);
+}
+
+.quran-text {
+  background-color: #faf7f0;
+  padding: 30px 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border: 2px solid #d4c5a9;
+  line-height: 2.5;
+  font-size: 28px;
+  font-family: 'Uthmanic', serif;
+  text-align: justify;
+  min-height: 400px;
+}
+
+/* ── Ayah Spans ────────────────────────────────────────────────────────────── */
+
+.ayah {
+  display: inline;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.ayah:hover {
+  background-color: #ffe0b2;
+}
+
+.ayah.active {
+  background-color: #ffb74d;
+  color: #3e2723;
+  font-weight: bold;
+}
+
+/* ── Surah / Basmala Headers ───────────────────────────────────────────────── */
+
+.basmala {
+  text-align: center;
+  font-size: 28px;
+  font-family: 'Amiri', serif;
+  margin: 15px 0;
+  color: #5d4037;
+}
+
+.sura-header {
+  text-align: center;
+  font-size: 32px;
+  font-family: 'Amiri', serif;
+  color: #5d4037;
+  margin: 25px 0;
+  padding: 15px;
+  background-color: #e8dcc4;
+  border-radius: 10px;
+  border: 2px solid #d4c5a9;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #e8dcc4;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #8d6e63;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6d4c41;
 }
