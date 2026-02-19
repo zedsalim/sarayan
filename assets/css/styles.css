@@ -37,6 +37,35 @@ body {
   max-height: 100dvh !important;
 }
 
+/* ── Offcanvas Sidebar ─────────────────────────────────────────────────────── */
+
+.offcanvas {
+  background-color: #e8dcc4;
+  width: 320px !important;
+  max-width: 85vw;
+}
+
+.offcanvas-header {
+  background-color: #e8dcc4;
+  border-bottom: 2px solid #d4c5a9;
+  padding: 20px;
+}
+
+.offcanvas-title {
+  color: #5d4037;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.offcanvas-body {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.btn-close {
+  filter: invert(0.3) sepia(1) saturate(5) hue-rotate(-30deg);
+}
+
 /* ── Main Content ──────────────────────────────────────────────────────────── */
 
 .main-content {
