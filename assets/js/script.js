@@ -116,6 +116,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadQuranData();
   initializeSelectors();
   initializeAudioPlayer();
+  loadSettings();
   const startPage = parseInt(localStorage.getItem('currentPage')) || 1;
   const savedSura = parseInt(localStorage.getItem('currentSura')) || 1;
   const savedAyah = parseInt(localStorage.getItem('currentAyah')) || null;
@@ -144,6 +145,26 @@ function restoreSavedAyah(suraNo, ayahNo) {
   getEl('ayah-select').value = ayahNo;
   updatePageInfo(ayahData);
   activateAyahInDOM(suraNo, ayahNo);
+}
+
+/** Load persisted user settings from localStorage */
+function loadSettings() {
+  const savedReciter =
+    localStorage.getItem('reciter') || 'abdelbasset_abdessamad';
+  getEl('reciter-select').value = savedReciter;
+
+  const savedSpeed = localStorage.getItem('speed') || '1';
+  getEl('speed-control').value = savedSpeed;
+
+  const savedRepeat = localStorage.getItem('repeat') || '1';
+  getEl('repeat-control').value = savedRepeat;
+
+  const savedPlayMode = localStorage.getItem('playMode') || 'sura';
+  getEl('play-mode').value = savedPlayMode;
+
+  const savedFontSize = localStorage.getItem('fontSize') || '28';
+  getEl('font-size-control').value = savedFontSize;
+  applyFontSize(savedFontSize);
 }
 
 // ─── Data Loading ─────────────────────────────────────────────────────────────
