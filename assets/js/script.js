@@ -115,6 +115,7 @@ function showToast(message) {
 document.addEventListener('DOMContentLoaded', async () => {
   await loadQuranData();
   initializeSelectors();
+  initializeAudioPlayer();
   const startPage = parseInt(localStorage.getItem('currentPage')) || 1;
   const savedSura = parseInt(localStorage.getItem('currentSura')) || 1;
   const savedAyah = parseInt(localStorage.getItem('currentAyah')) || null;
@@ -390,5 +391,242 @@ function selectFirstAyahOfSurah(suraNo) {
   saveSetting('currentAyah', 1);
 
   setTimeout(() => activateAyahInDOM(suraNo, 1), 100);
+}
+
+// ─── Audio ────────────────────────────────────────────────────────────────────
+
+function initializeAudioPlayer() {
+  state.audioPlayer = getEl('audio-player');
+
+  if (!state.audioPlayer) return;
+
+  state.audioPlayer.addEventListener('ended', () => {
+    state.currentRepeatCount++;
+
+    const repeatControl = getEl('repeat-control').value;
+    const maxRepeat =
+      repeatControl === 'infinite' ? Infinity : parseInt(repeatControl);
+
+    if (state.currentRepeatCount < maxRepeat) {
+      state.audioPlayer.play();
+    } else {
+      state.currentRepeatCount = 0;
+      state.currentPlayIndex++;
+
+      if (state.currentPlayIndex < state.playQueue.length) {
+        playNextInQueue();
+      } else {
+        stopAudio();
+      }
+    }
+  });
+
+  state.audioPlayer.addEventListener('play', () => {
+    state.isPlaying = true;
+    highlightActiveAyah();
+    updatePauseButton();
+  });
+
+  state.audioPlayer.addEventListener('pause', () => {
+    state.isPlaying = false;
+    updatePauseButton();
+  });
+}
+
+function playAudio() {
+  state.selectedReciter = getEl('reciter-select').value;
+
+  if (!state.selectedReciter) {
+    showToast('الرجاء اختيار القارئ');
+    return;
+  }
+
+  if (!state.currentAyah) {
+    showToast('الرجاء اختيار آية');
+    return;
+  }
+
+  buildPlayQueue();
+
+  if (state.playQueue.length === 0) {
+    showToast('لا توجد ملفات صوتية للتشغيل');
+    return;
+  }
+
+  state.currentPlayIndex = 0;
+  state.currentRepeatCount = 0;
+
+  playNextInQueue();
+}
+
+function buildPlayQueue() {
+  state.playQueue = [];
+  const playMode = getEl('play-mode').value;
+
+  const sliceFromCurrent = (ayahs) => {
+    const startIndex = state.currentAyah
+      ? ayahs.findIndex((a) => a.id === state.currentAyah.id)
+      : 0;
+    return startIndex >= 0 ? ayahs.slice(startIndex) : ayahs;
+  };
+
+  switch (playMode) {
+    case 'aya':
+      if (state.currentAyah) state.playQueue.push(state.currentAyah);
+      break;
+
+    case 'page':
+      state.playQueue = sliceFromCurrent(getAyahsOnPage(state.currentPage));
+      break;
+
+    case 'sura':
+      state.playQueue = sliceFromCurrent(
+        state.quranData.filter((item) => item.sura_no === state.currentSura),
+      );
+      break;
+
+    case 'juz':
+      state.playQueue = sliceFromCurrent(
+        state.quranData.filter((item) => item.jozz === state.currentJuz),
+      );
+      break;
+  }
+}
+
+function playNextInQueue() {
+  if (state.currentPlayIndex >= state.playQueue.length) {
+    stopAudio();
+    return;
+  }
+
+  const ayah = state.playQueue[state.currentPlayIndex];
+  state.selectedReciter = getEl('reciter-select')?.value || '';
+
+  const audioPath = buildAudioPath(
+    state.selectedReciter,
+    ayah.sura_no,
+    ayah.aya_no,
+  );
+
+  if (state.audioPlayer) {
+    state.audioPlayer.src = audioPath;
+    state.audioPlayer.playbackRate = parseFloat(
+      getEl('speed-control')?.value || '1',
+    );
+    state.audioPlayer.play().catch((error) => {
+      console.error('Error playing audio:', error);
+      state.currentRepeatCount = 0;
+      state.currentPlayIndex++;
+      if (state.currentPlayIndex < state.playQueue.length) playNextInQueue();
+    });
+  }
+
+  state.currentAyah = ayah;
+  state.currentSura = ayah.sura_no;
+  saveSetting('currentAyah', ayah.aya_no);
+  saveSetting('currentSura', ayah.sura_no);
+
+  updateSidebarSelectors();
+  updatePageInfo(ayah);
+  highlightActiveAyah();
+
+  // If the ayah is not on the current page, navigate to it
+  const ayahElement = document.querySelector(
+    `[data-sura="${ayah.sura_no}"][data-ayah="${ayah.aya_no}"]`,
+  );
+
+  if (ayahElement) {
+    ayahElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } else {
+    const ayahPage = parseInt(ayah.page.split('-')[0]);
+    if (ayahPage !== state.currentPage) {
+      displayPage(ayahPage, true);
+      setTimeout(() => {
+        const el = activateAyahInDOM(ayah.sura_no, ayah.aya_no);
+        if (el) updateSidebarSelectors();
+      }, 300);
+    }
+  }
+}
+
+/** Re-apply the active highlight to whichever ayah is current */
+function highlightActiveAyah() {
+  if (state.currentAyah) {
+    activateAyahInDOM(state.currentAyah.sura_no, state.currentAyah.aya_no);
+  }
+}
+
+/**
+ * Jump to the first ayah of a page and start playback from there.
+ * Used when navigating pages while audio is active.
+ */
+function jumpToFirstAyahOfPage(pageNum) {
+  const pageData = getAyahsOnPage(pageNum);
+  if (pageData.length === 0) return;
+
+  const firstAyah = pageData[0];
+
+  // Stop current playback cleanly
+  if (state.audioPlayer) {
+    state.audioPlayer.pause();
+    state.audioPlayer.src = '';
+  }
+  state.isPlaying = false;
+  state.playQueue = [];
+  state.currentPlayIndex = 0;
+  state.currentRepeatCount = 0;
+
+  state.currentAyah = firstAyah;
+  state.currentSura = firstAyah.sura_no;
+  state.currentJuz = firstAyah.jozz;
+
+  getEl('surah-select').value = firstAyah.sura_no;
+  getEl('juz-select').value = firstAyah.jozz;
+  getEl('page-select').value = pageNum;
+  populateAyahSelector(firstAyah.sura_no);
+  getEl('ayah-select').value = firstAyah.aya_no;
+
+  saveSetting('currentAyah', firstAyah.aya_no);
+  saveSetting('currentSura', firstAyah.sura_no);
+  saveSetting('currentJuz', firstAyah.jozz);
+
+  updatePageInfo(firstAyah);
+
+  setTimeout(() => {
+    activateAyahInDOM(firstAyah.sura_no, firstAyah.aya_no);
+    if (getEl('reciter-select').value) playAudio();
+  }, 100);
+}
+
+function stopAudio() {
+  if (state.audioPlayer) {
+    state.audioPlayer.pause();
+    state.audioPlayer.currentTime = 0;
+    state.audioPlayer.src = '';
+  }
+  state.isPlaying = false;
+  state.currentPlayIndex = 0;
+  state.currentRepeatCount = 0;
+  state.playQueue = [];
+
+  updatePauseButton();
+}
+
+function togglePauseResume() {
+  if (!state.audioPlayer) return;
+
+  if (state.audioPlayer.paused) {
+    state.audioPlayer.play();
+  } else {
+    state.audioPlayer.pause();
+  }
+}
+
+/** Update the pause/resume button label to reflect current playback state */
+function updatePauseButton() {
+  const pauseBtn = getEl('pause-btn');
+  const isPaused = state.audioPlayer?.paused ?? true;
+  const text = isPaused || !state.isPlaying ? '▶ استئناف' : '⏸ إيقاف مؤقت';
+  if (pauseBtn) pauseBtn.textContent = text;
 }
 
