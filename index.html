@@ -20,7 +20,7 @@
   <body>
     <div class="container-fluid h-100 p-0">
       <div class="row g-0 h-100">
-        <!-- Offcanvas Sidebar (placeholder) -->
+        <!-- Offcanvas Sidebar -->
         <div
           class="offcanvas offcanvas-start"
           tabindex="-1"
@@ -41,7 +41,101 @@
               aria-label="Close"
             ></button>
           </div>
-          <div class="offcanvas-body"></div>
+          <div class="offcanvas-body">
+            <div class="mb-3">
+              <label for="surah-select" class="form-label">السورة</label>
+              <select id="surah-select" class="form-select"></select>
+            </div>
+
+            <div class="mb-3">
+              <label for="juz-select" class="form-label">الجزء</label>
+              <select id="juz-select" class="form-select"></select>
+            </div>
+
+            <div class="mb-3">
+              <label for="page-select" class="form-label">الصفحة</label>
+              <select id="page-select" class="form-select"></select>
+            </div>
+
+            <div class="mb-3">
+              <label for="ayah-select" class="form-label">الآية</label>
+              <select id="ayah-select" class="form-select"></select>
+            </div>
+
+            <div class="mb-3">
+              <label for="reciter-select" class="form-label">القارئ</label>
+              <select id="reciter-select" class="form-select">
+                <option value="">اختر القارئ</option>
+                <option value="abdelbasset_abdessamad">
+                  عبد الباسط عبد الصمد
+                </option>
+                <option value="khalil_al-hosary">خليل محمود الحصري</option>
+                <option value="ibrahim_al-dosary">إبراهيم الدوسري</option>
+                <option value="yassin_al-zajaery">ياسين الجزائري</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="speed-control" class="form-label">سرعة التشغيل</label>
+              <select id="speed-control" class="form-select">
+                <option value="0.5">0.5x</option>
+                <option value="0.75">0.75x</option>
+                <option value="1" selected>1x</option>
+                <option value="1.25">1.25x</option>
+                <option value="1.5">1.5x</option>
+                <option value="2">2x</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="repeat-control" class="form-label">التكرار</label>
+              <select id="repeat-control" class="form-select">
+                <option value="1" selected>مرة واحدة</option>
+                <option value="2">مرتين</option>
+                <option value="4">أربع مرات</option>
+                <option value="5">خمس مرات</option>
+                <option value="infinite">دائماً</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="play-mode" class="form-label">وضع التشغيل</label>
+              <select id="play-mode" class="form-select">
+                <option value="aya" selected>آية</option>
+                <option value="page">صفحة</option>
+                <option value="sura">سورة</option>
+                <option value="juz">جزء</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="font-size-control" class="form-label">حجم الخط</label>
+              <select id="font-size-control" class="form-select">
+                <option value="20">صغير جداً</option>
+                <option value="24">صغير</option>
+                <option value="28" selected>متوسط</option>
+                <option value="32">كبير</option>
+                <option value="36">كبير جداً</option>
+                <option value="40">ضخم</option>
+              </select>
+            </div>
+
+            <div class="d-grid gap-2 mb-3">
+              <button id="play-btn" class="btn btn-custom">
+                &#9654; تشغيل
+              </button>
+              <button id="pause-btn" class="btn btn-custom">
+                &#9208; إيقاف مؤقت
+              </button>
+              <button id="stop-btn" class="btn btn-custom">
+                &#9209; إيقاف
+              </button>
+            </div>
+
+            <div class="audio-player-container">
+              <audio id="audio-player" class="w-100" controls></audio>
+            </div>
+          </div>
         </div>
 
         <!-- Main Content -->
@@ -61,7 +155,8 @@
                   </button>
                 </div>
                 <div class="col text-center">
-                  <h3>وَرْشَنَا</h3>
+                  <h3 id="sura-title">وَرْشَنَا</h3>
+                  <p id="page-info"></p>
                 </div>
               </div>
             </div>
@@ -71,11 +166,7 @@
             <div class="container-fluid">
               <div class="row justify-content-center">
                 <div class="col-12 col-lg-11 col-xl-10">
-                  <div id="quran-text" class="quran-text">
-                    <p style="text-align: center; color: #8d6e63">
-                      جاري التحميل...
-                    </p>
-                  </div>
+                  <div id="quran-text" class="quran-text"></div>
                 </div>
               </div>
             </div>
@@ -86,5 +177,7 @@
 
     <!-- Bootstrap JS Bundle -->
     <script src="assets/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Script -->
+    <script src="assets/js/script.js"></script>
   </body>
 </html>
