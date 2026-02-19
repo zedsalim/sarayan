@@ -112,4 +112,21 @@ function showToast(message) {
 
 // ─── Initialisation ───────────────────────────────────────────────────────────
 
-document.addEventListener('DOMContentLoaded', async () => {});
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadQuranData();
+});
+
+// ─── Data Loading ─────────────────────────────────────────────────────────────
+
+async function loadQuranData() {
+  try {
+    const response = await fetch(
+      'assets/text/UthmanicWarsh/warshData_v2-1.json',
+    );
+    state.quranData = await response.json();
+  } catch (error) {
+    console.error('Error loading Quran data:', error);
+    showToast('خطأ في تحميل بيانات القرآن الكريم');
+  }
+}
+
