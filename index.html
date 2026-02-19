@@ -154,10 +154,24 @@
                     <i class="bi bi-list"></i>
                   </button>
                 </div>
-                <div class="col text-center">
-                  <h3 id="sura-title">وَرْشَنَا</h3>
-                  <p id="page-info"></p>
+
+                <div class="col">
+                  <div class="d-flex align-items-center justify-content-center">
+                    <button id="prev-page" class="nav-btn me-3">
+                      <i class="bi bi-chevron-right"></i>
+                    </button>
+                    <div class="text-center page-info-wrapper flex-grow-1">
+                      <h3 id="sura-title" class="mb-1"></h3>
+                      <p id="page-info" class="mb-0"></p>
+                    </div>
+                    <button id="next-page" class="nav-btn ms-3">
+                      <i class="bi bi-chevron-left"></i>
+                    </button>
+                  </div>
                 </div>
+
+                <!-- Placeholder for symmetry -->
+                <div class="col-auto" style="width: 45px"></div>
               </div>
             </div>
           </div>
@@ -177,6 +191,7 @@
 
     <!-- Bootstrap JS Bundle -->
     <script src="assets/js/bootstrap.bundle.min.js"></script>
+
     <!-- Custom Script -->
     <script src="assets/js/script.js"></script>
   </body>
