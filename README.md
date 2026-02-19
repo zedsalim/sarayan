@@ -7,6 +7,8 @@
 
 A lightweight, offline/online-friendly Mushaf **Warsh** web app (Arabic / RTL) that lets you browse the Qur'an by Surah, Juz', or Page and listen verse-by-verse audio with playback controls.
 
+> 🌐 **Live site:** [warshana.pages.dev](https://warshana.pages.dev/)
+
 ## Screenshots
 
 <p align="center">
@@ -26,6 +28,11 @@ A lightweight, offline/online-friendly Mushaf **Warsh** web app (Arabic / RTL) t
 - Settings persist via `localStorage` across sessions
 
 ## Running the App
+
+You can use the app in two ways:
+
+- **Online (no setup):** visit [warshana.pages.dev](https://warshana.pages.dev/) directly in your browser.
+- **Locally:** clone the repo and serve it yourself (required for offline audio).
 
 ### 1. Get the code
 
@@ -58,7 +65,7 @@ Then open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Offline Audio Setup
 
-By default the web app streams audio from online URLs. To use it **fully offline**, download the audio files and place them locally:
+By default the app streams audio from online URLs. To use it **fully offline**, download the audio files and place them locally:
 
 **1. Download the audio files**
 
@@ -83,7 +90,7 @@ assets/
 
 **3. Run the local server and enjoy offline**
 
-The web app automatically detects whether local audio files are present and uses them. If they're missing it falls back to streaming online. No configuration needed.
+The app automatically detects whether local audio files are present (via a single check per surah) and uses them. If they're missing it falls back to streaming online. No configuration needed.
 
 ## Keyboard Shortcuts
 
