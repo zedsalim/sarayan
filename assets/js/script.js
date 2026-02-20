@@ -165,8 +165,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   displayPage(startPage, true);
 
   if (savedSura && savedAyah) {
-    // Allow the DOM to finish rendering before restoring the saved position
     setTimeout(() => restoreSavedAyah(savedSura, savedAyah), 200);
+  } else {
+    setTimeout(() => {
+      const firstAyah = state.quranData.find(
+        (item) => item.sura_no === savedSura && item.aya_no === 1,
+      );
+      if (firstAyah) {
+        state.currentAyah = firstAyah;
+        state.currentSura = firstAyah.sura_no;
+        populateAyahSelector(firstAyah.sura_no);
+        getEl('ayah-select').value = 1;
+        updatePageInfo(firstAyah);
+        activateAyahInDOM(firstAyah.sura_no, 1);
+      }
+    }, 200);
   }
 });
 
