@@ -437,7 +437,9 @@ function handleAyahClickWithToggle(e, ayah) {
     state.currentAyah.aya_no === ayah.aya_no;
 
   const hasAudioLoaded =
-    state.audioPlayer && state.audioPlayer.src && state.audioPlayer.src !== '';
+    state.audioPlayer &&
+    state.audioPlayer.readyState > 0 &&
+    state.isPlaying !== false;
 
   if (isSameAyah && hasAudioLoaded) {
     togglePauseResume();
@@ -706,6 +708,12 @@ function stopAudio() {
 
 function togglePauseResume() {
   if (!state.audioPlayer) return;
+
+  // Don't attempt to play if no source is actually loaded
+  if (state.audioPlayer.paused && state.audioPlayer.readyState === 0) {
+    if (state.currentAyah) playAudio();
+    return;
+  }
 
   if (state.audioPlayer.paused) {
     state.audioPlayer.play();
