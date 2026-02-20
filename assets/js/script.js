@@ -18,6 +18,7 @@ const state = {
   currentPlayIndex: 0,
   repeatCount: 1,
   currentRepeatCount: 0,
+  currentPlayModeRepeatCount: 0,
   isPlaying: false,
 };
 
@@ -502,7 +503,17 @@ function initializeAudioPlayer() {
       if (state.currentPlayIndex < state.playQueue.length) {
         playNextInQueue();
       } else {
-        stopAudio();
+        state.currentPlayModeRepeatCount++;
+
+        if (state.currentPlayModeRepeatCount < maxRepeat) {
+          state.currentPlayIndex = 0;
+          state.currentRepeatCount = 0;
+          rebuildFullPlayQueue();
+          playNextInQueue();
+        } else {
+          state.currentPlayModeRepeatCount = 0;
+          stopAudio();
+        }
       }
     }
   });
@@ -548,6 +559,7 @@ async function playAudio() {
 
   state.currentPlayIndex = 0;
   state.currentRepeatCount = 0;
+  state.currentPlayModeRepeatCount = 0;
 
   playNextInQueue();
 }
@@ -581,6 +593,37 @@ function buildPlayQueue() {
     case 'juz':
       state.playQueue = sliceFromCurrent(
         state.quranData.filter((item) => item.jozz === state.currentJuz),
+      );
+      break;
+  }
+}
+
+/**
+ * Rebuild the full play queue from the very beginning of the play mode
+ * (used when repeating the whole queue after it finishes).
+ */
+function rebuildFullPlayQueue() {
+  state.playQueue = [];
+  const playMode = getEl('play-mode').value;
+
+  switch (playMode) {
+    case 'aya':
+      if (state.currentAyah) state.playQueue.push(state.currentAyah);
+      break;
+
+    case 'page':
+      state.playQueue = getAyahsOnPage(state.currentPage);
+      break;
+
+    case 'sura':
+      state.playQueue = state.quranData.filter(
+        (item) => item.sura_no === state.currentSura,
+      );
+      break;
+
+    case 'juz':
+      state.playQueue = state.quranData.filter(
+        (item) => item.jozz === state.currentJuz,
       );
       break;
   }
@@ -682,6 +725,7 @@ function jumpToFirstAyahOfPage(pageNum) {
   state.playQueue = [];
   state.currentPlayIndex = 0;
   state.currentRepeatCount = 0;
+  state.currentPlayModeRepeatCount = 0;
 
   state.currentAyah = firstAyah;
   state.currentSura = firstAyah.sura_no;
@@ -714,6 +758,7 @@ function stopAudio() {
   state.isPlaying = false;
   state.currentPlayIndex = 0;
   state.currentRepeatCount = 0;
+  state.currentPlayModeRepeatCount = 0;
   state.playQueue = [];
 
   updatePauseButton();
