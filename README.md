@@ -20,7 +20,7 @@ A lightweight, offline/online-friendly Mushaf **Warsh** web app (Arabic / RTL) t
 ## Features
 
 - Navigate by Surah, Juz, Page, or Ayah from a sidebar
-- Verse-by-verse audio playback with multiple reciters
+- Verse-by-verse audio playback (currently one reciter available)
 - Play modes: ayah, page, surah, or juz
 - Playback speed (0.5×–2×) and repeat controls (including infinite)
 - Adjustable Qur'an text font size
