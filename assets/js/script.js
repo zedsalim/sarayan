@@ -450,15 +450,27 @@ function handleAyahClickWithToggle(e, ayah) {
     state.currentAyah.sura_no === ayah.sura_no &&
     state.currentAyah.aya_no === ayah.aya_no;
 
-  const hasAudioLoaded =
-    state.audioPlayer &&
-    state.audioPlayer.readyState > 0 &&
-    state.isPlaying !== false;
-
-  if (isSameAyah && hasAudioLoaded) {
+  if (isSameAyah) {
     togglePauseResume();
   } else {
-    setCurrentAyah(ayah);
+    state.currentAyah = ayah;
+    state.currentSura = ayah.sura_no;
+
+    getEl('surah-select').value = ayah.sura_no;
+    getEl('ayah-select').value = ayah.aya_no;
+    updatePageInfo(ayah);
+    saveSetting('currentSura', ayah.sura_no);
+    saveSetting('currentAyah', ayah.aya_no);
+    activateAyahInDOM(ayah.sura_no, ayah.aya_no);
+
+    if (state.audioPlayer) {
+      state.audioPlayer.pause();
+      state.audioPlayer.src = '';
+    }
+    state.isPlaying = false;
+    state.currentRepeatCount = 0;
+    state.currentPlayModeRepeatCount = 0;
+
     setTimeout(() => playAudio(), 100);
   }
 }
@@ -767,9 +779,9 @@ function stopAudio() {
 function togglePauseResume() {
   if (!state.audioPlayer) return;
 
-  // Don't attempt to play if no source is actually loaded
-  if (state.audioPlayer.paused && state.audioPlayer.readyState === 0) {
-    if (state.currentAyah) playAudio();
+  // If paused with no source at all, start fresh
+  if (state.audioPlayer.paused && !state.audioPlayer.src && state.currentAyah) {
+    playAudio();
     return;
   }
 
