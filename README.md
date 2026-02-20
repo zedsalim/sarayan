@@ -110,3 +110,10 @@ The app automatically detects whether local audio files are present (via a singl
 - **Audio:** [VerseByVerseQuran.com](https://www.versebyversequran.com/)
 - **Font:** Maghribi-style Uthmanic Warsh script (`uthmanic_warsh_v21.ttf`) By [King Fahd Glorious Qur'an Printing Complex](https://qurancomplex.gov.sa/quran-dev/)
 - **UI framework:** Bootstrap 5 RTL
+
+## Audio Verification
+
+The Abdelbasset Abdessamad (Warsh) audio has been verified and aligned
+with King Fahd Warsh v2-1 ayah boundaries.
+
+📄 Full report: [AUDIO_ALIGNMENT.md](./AUDIO_ALIGNMENT.md)
