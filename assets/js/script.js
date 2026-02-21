@@ -460,6 +460,7 @@ function handleAyahClickWithToggle(e, ayah) {
     saveSetting('currentSura', ayah.sura_no);
     saveSetting('currentAyah', ayah.aya_no);
     activateAyahInDOM(ayah.sura_no, ayah.aya_no);
+    updateNavButtonStates();
 
     if (state.audioPlayer) {
       state.audioPlayer.pause();
@@ -689,6 +690,7 @@ function playNextInQueue() {
   updateSidebarSelectors();
   updatePageInfo(ayah);
   highlightActiveAyah();
+  updateNavButtonStates();
 
   // If the ayah is not on the current page, navigate to it
   const ayahElement = document.querySelector(
