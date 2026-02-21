@@ -755,6 +755,7 @@ function jumpToFirstAyahOfPage(pageNum, shouldPlay = false) {
 
   setTimeout(() => {
     activateAyahInDOM(firstAyah.sura_no, firstAyah.aya_no);
+    updateNavButtonStates();
     if (shouldPlay && getEl('reciter-select').value) playAudio();
   }, 100);
 }
