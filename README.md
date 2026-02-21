@@ -7,8 +7,8 @@
 
 A lightweight, offline/online-friendly Mushaf web app (Arabic / RTL) supporting both **Warsh** and **Hafs** riwayas. Browse the Qur'an by Surah, Juz', or Page and listen verse-by-verse audio with full playback controls.
 
-> 🌐 **Live site:** [warshana.pages.dev](https://warshana.pages.dev/)
-> 📦 **Android APK:** [Download from Releases](https://github.com/zedsalim/warshana/releases)
+> 🌐 **Live site:** [sarayan.pages.dev](https://sarayan.pages.dev/)
+> 📦 **Android APK:** [Download from Releases](https://github.com/zedsalim/sarayan/releases)
 
 ## Screenshots
 
@@ -33,15 +33,15 @@ A lightweight, offline/online-friendly Mushaf web app (Arabic / RTL) supporting 
 
 You can use the app in three ways:
 
-- **Online (no setup):** visit [warshana.pages.dev](https://warshana.pages.dev/) directly in your browser.
-- **Android:** download and install the APK from [Releases](https://github.com/zedsalim/warshana/releases) _(enable "Install from unknown sources" if prompted)_.
+- **Online (no setup):** visit [sarayan.pages.dev](https://sarayan.pages.dev/) directly in your browser.
+- **Android:** download and install the APK from [Releases](https://github.com/zedsalim/sarayan/releases) _(enable "Install from unknown sources" if prompted)_.
 - **Locally:** clone the repo and serve it yourself (required for offline audio).
 
 ### 1. Get the code
 
 ```bash
-git clone https://github.com/zedsalim/warshana
-cd warshana
+git clone https://github.com/zedsalim/sarayan
+cd sarayan
 ```
 
 ### 2. Serve it locally
