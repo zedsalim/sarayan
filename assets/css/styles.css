@@ -714,6 +714,7 @@ body.fullscreen-mode .fab-fullscreen-exit {
   font-family: 'Amiri', Arial, sans-serif;
   direction: rtl;
 }
+
 .warsh-modal-header {
   background: linear-gradient(135deg, var(--c-brown-dk), var(--c-brown));
 }
@@ -722,14 +723,17 @@ body.fullscreen-mode .fab-fullscreen-exit {
   background: var(--c-panel);
   border-color: var(--c-border) !important;
 }
+
 .warsh-card-trust {
   background: color-mix(in srgb, var(--c-brown) 8%, var(--c-surface));
   border-color: var(--c-brown) !important;
 }
+
 .warsh-card-title {
   color: var(--c-brown-dk);
 }
-.warsh-card p {
+
+.warsh-text {
   color: var(--c-text-md);
 }
 
@@ -740,6 +744,7 @@ body.fullscreen-mode .fab-fullscreen-exit {
   border-radius: 50%;
   flex-shrink: 0;
 }
+
 .warsh-dot-brown {
   background: var(--c-brown);
 }
@@ -751,22 +756,17 @@ body.fullscreen-mode .fab-fullscreen-exit {
   background: var(--c-surface);
   border-color: var(--c-border) !important;
 }
+
 .warsh-letter-demo {
   font-size: 2.8rem;
   color: var(--c-brown-dk);
   line-height: 1.3;
 }
+
 .warsh-letter-label {
   color: var(--c-text-md);
-  font-size: 0.85rem;
+  font-size: 1.1rem;
   line-height: 1.4;
-}
-
-.warsh-note {
-  background: #e8f5e9;
-  border-right: 3px solid #4caf50;
-  color: #2e7d32;
-  font-size: 1rem;
 }
 
 .warsh-link {
@@ -776,23 +776,25 @@ body.fullscreen-mode .fab-fullscreen-exit {
 .warsh-modal-footer {
   background: var(--c-panel);
   border-color: var(--c-border) !important;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
 }
-.warsh-timer-label {
-  color: var(--c-text-lt);
+
+.warsh-progress-wrapper {
+  min-width: 140px;
 }
 
 .warsh-progress-track {
+  height: 6px;
   background: var(--c-border);
 }
+
 .warsh-progress-bar {
   height: 100%;
   width: 100%;
   background: var(--c-brown);
+}
+
+.warsh-timer-label {
+  color: var(--c-text-lt);
 }
 
 .warsh-close-btn {
@@ -804,14 +806,15 @@ body.fullscreen-mode .fab-fullscreen-exit {
     background 0.3s ease,
     transform 0.2s ease,
     box-shadow 0.2s ease;
-  white-space: nowrap;
 }
+
 .warsh-close-btn:not(.disabled):hover {
   background: var(--c-brown-dk);
   color: #fff;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
+
 .warsh-close-btn.disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -823,6 +826,7 @@ body.fullscreen-mode .fab-fullscreen-exit {
     flex-direction: column;
     align-items: stretch;
   }
+
   .warsh-close-btn {
     text-align: center;
   }
