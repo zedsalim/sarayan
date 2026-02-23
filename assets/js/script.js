@@ -288,7 +288,9 @@ function loadSettings() {
   const savedFontSize = localStorage.getItem('fontSize') || '28';
   getEl('font-size-control').value = savedFontSize;
   applyFontSize(savedFontSize);
-  showWarshModal();
+  setTimeout(() => {
+    showWarshModal();
+  }, 2000);
 }
 
 // ─── Data Loading ─────────────────────────────────────────────────────────────
