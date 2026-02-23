@@ -1153,6 +1153,7 @@ function initializeEventListeners() {
       activateAyahInDOM(suraNo, 1);
       getEl('ayah-select').value = 1;
       updatePageInfo(firstAyah);
+      updateNavButtonStates();
 
       if (wasPlaying && getEl('reciter-select').value) playAudio();
     }, 100);
