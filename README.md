@@ -16,6 +16,8 @@ A lightweight, offline/online-friendly Mushaf web app (Arabic / RTL) supporting 
   <img src="assets/imgs/1.png" alt="Quran Reader - Main View" width="48%" />
   &nbsp;
   <img src="assets/imgs/2.png" alt="Quran Reader - Sidebar" width="48%" />
+  &nbsp;
+  <img src="assets/imgs/3.png" alt="Quran Reader - Fullscreen Mode" width="48%" />
 </p>
 
 ## Features
@@ -27,6 +29,7 @@ A lightweight, offline/online-friendly Mushaf web app (Arabic / RTL) supporting 
 - Playback speed (0.5×–2×) and repeat controls (including infinite)
 - Adjustable Qur'an text font size
 - Active ayah highlighting with auto-scroll
+- Toggle fullscreen reading mode
 - Settings persist via `localStorage` across sessions
 
 ## Running the App
