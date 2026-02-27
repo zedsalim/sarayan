@@ -33,6 +33,7 @@ A lightweight, offline/online-friendly Mushaf web app (Arabic / RTL) supporting 
 - Playback speed (0.5×–2×) and repeat controls (including infinite)
 - Adjustable Qur'an text font size
 - Active ayah highlighting with auto-scroll
+- Ayah end markers (ﰀ ﰁ ﰂ …) rendered via KFGQPC PUA glyphs
 - Toggle fullscreen reading mode
 - Settings persist via `localStorage` across sessions
 
@@ -82,7 +83,7 @@ Download the reciter folder(s) from Google Drive:
 
 **2. Place them in the right folder**
 
-Audio is now organised by riwaya:
+Audio is organised by riwaya:
 
 ```
 assets/
@@ -115,11 +116,31 @@ Qur'an text is stored in `assets/text/` separated by riwaya:
 
 ```
 assets/text/
-├── UthmanicWarsh/
-│   └── warshData_v2-1.json      ← Warsh text (King Fahd v2.1)
-└── UthmanicHafs/
-    └── hafsData_v2-0.json       ← Hafs text (King Fahd v2.0)
+├── warsh-quran.json         ← Warsh text (KFGQPC v2.1, Uthmanic verse numbering)
+└── hafs-quran.json          ← Hafs text (KFGQPC v2.0)
 ```
+
+Both files share the same JSON structure:
+
+```json
+{
+  "id": 1,
+  "jozz": 1,
+  "page": 1,
+  "sura_no": 1,
+  "sura_name_en": "Al-Fātiḥah",
+  "sura_name_ar": "الفَاتِحة",
+  "line_start": 2,
+  "line_end": 2,
+  "aya_no": 1,
+  "aya_no_marker": "ﰀ",
+  "aya_text": "بِسْمِ اِ۬للَّهِ اِ۬لرَّحْمَٰنِ اِ۬لرَّحِيمِ"
+}
+```
+
+The `aya_no_marker` field contains the KFGQPC PUA glyph (`U+FC00 + aya_no - 1`) rendered by the Uthmanic fonts as the decorative ayah end ornament.
+
+> The Warsh text is sourced from [fawazahmed0/quran-api](https://github.com/fawazahmed0/quran-api) (version 8, Uthmanic verse numbering) which itself originates from [qurancomplex.gov.sa](https://qurancomplex.gov.sa/). Verse numbering has been aligned to the Uthmanic standard for cross-riwaya compatibility.
 
 ## Keyboard Shortcuts
 
@@ -133,9 +154,10 @@ assets/text/
 
 ## Credits
 
-- **Qur'an text & fonts:** [King Fahd Glorious Qur'an Printing Complex](https://qurancomplex.gov.sa/quran-dev/)
+- **Qur'an text & fonts:** [King Fahd Glorious Qur'an Printing Complex (KFGQPC)](https://qurancomplex.gov.sa/quran-dev/)
   - Warsh font: `uthmanic_warsh_v21.ttf` (Maghribi-style Uthmanic Warsh script)
   - Hafs font: `uthmanic_hafs_v20.ttf` (KFGQPC Hafs Uthmanic script)
+- **Warsh source text:** [fawazahmed0/quran-api](https://github.com/fawazahmed0/quran-api)
 - **Audio:** [VerseByVerseQuran.com](https://www.versebyversequran.com/)
 - **UI framework:** Bootstrap 5 RTL
 

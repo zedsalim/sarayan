@@ -15,7 +15,7 @@ const WARSH_TIMER_MS = 5000;
  */
 const RIWAYA_CONFIG = {
   warsh: {
-    textFile: 'assets/text/UthmanicWarsh/warshData_v2-1.json',
+    textFile: 'assets/text/warsh-quran.json',
     audioDir: 'warsh',
     audioUrls: [
       'assets/audio/quran_audio_urls-1_warsh.json',
@@ -27,10 +27,11 @@ const RIWAYA_CONFIG = {
     font: 'Uthmanic',
     reciters: {
       abdelbasset_abdessamad: 'عبد الباسط عبد الصمد',
+      yassen_al_jazairi: 'ياسين الجزائري',
     },
   },
   hafs: {
-    textFile: 'assets/text/UthmanicHafs/hafsData_v2-0.json',
+    textFile: 'assets/text/hafs-quran.json',
     audioDir: 'hafs',
     audioUrls: [
       'assets/audio/quran_audio_urls-1_hafs.json',
@@ -566,7 +567,8 @@ function displayPage(pageNum, keepCurrentSura = false) {
         if (
           surahsStartingOnPage.has(ayah.sura_no) &&
           ayah.sura_no !== SURAH_NO_BASMALA &&
-          !(state.currentRiwaya === 'hafs' && ayah.sura_no === 1)
+          !(state.currentRiwaya === 'hafs' && ayah.sura_no === 1) &&
+          !(state.currentRiwaya === 'warsh' && ayah.sura_no === 1)
         ) {
           const basmalaDiv = document.createElement('div');
           basmalaDiv.className = 'basmala';
@@ -581,7 +583,8 @@ function displayPage(pageNum, keepCurrentSura = false) {
     ayahSpan.dataset.sura = ayah.sura_no;
     ayahSpan.dataset.ayah = ayah.aya_no;
     ayahSpan.dataset.id = ayah.id;
-    ayahSpan.textContent = ayah.aya_text + ' ';
+    ayahSpan.textContent =
+      ayah.aya_text + ' ' + (ayah.aya_no_marker || '') + ' ';
     ayahSpan.addEventListener('click', (e) =>
       handleAyahClickWithToggle(e, ayah),
     );
