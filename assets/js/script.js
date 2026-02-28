@@ -27,6 +27,7 @@ const RIWAYA_CONFIG = {
     font: 'Uthmanic',
     reciters: {
       yassen_al_jazairi: 'ياسين الجزائري',
+      'mahmoud_khalil_al-hussary': 'محمود خليل الحصري',
     },
   },
   hafs: {
