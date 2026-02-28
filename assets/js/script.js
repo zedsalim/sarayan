@@ -41,6 +41,7 @@ const RIWAYA_CONFIG = {
     ],
     font: 'UthmanicHafs',
     reciters: {
+      'muhammad_siddiq_al-minshawi': 'محمد صديق المنشاوي',
       abdelbasset_abdessamad: 'عبد الباسط عبد الصمد',
     },
   },
