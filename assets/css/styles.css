@@ -373,6 +373,33 @@ body {
   flex-shrink: 0;
 }
 
+/* ── Audio progress strip ─────────────────────────────────────────────────── */
+
+.audio-progress-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.audio-progress-strip.is-playing {
+  opacity: 1;
+}
+
+.audio-progress-strip__fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--c-highlight), #fff8e1);
+  border-radius: 0 2px 2px 0;
+}
+
 /* ── Tablet ────────────────────────────────────────────────────────────────── */
 
 @media (max-width: 991px) and (min-width: 768px) {

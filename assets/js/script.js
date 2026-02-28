@@ -1017,6 +1017,10 @@ function stopAudio() {
 
   updatePauseButton();
   syncBottomPlayIcon();
+  clearProgressHideTimeout();
+  stopProgressRAF();
+  setAudioProgressActive(false);
+  setAudioProgress(0);
 }
 
 function togglePauseResume() {
@@ -1539,13 +1543,89 @@ function initializeBottomControls() {
 
   const player = getEl('audio-player');
   if (player) {
-    player.addEventListener('play', () => setTimeout(syncBottomPlayIcon, 50));
-    player.addEventListener('pause', () => setTimeout(syncBottomPlayIcon, 50));
-    player.addEventListener('ended', () => setTimeout(syncBottomPlayIcon, 50));
+    player.addEventListener('play', () => {
+      setTimeout(syncBottomPlayIcon, 50);
+      clearProgressHideTimeout();
+      setAudioProgressActive(true);
+      startProgressRAF();
+    });
+    player.addEventListener('pause', () => {
+      setTimeout(syncBottomPlayIcon, 50);
+      stopProgressRAF();
+      setAudioProgressActive(false);
+    });
+    player.addEventListener('ended', () => {
+      setTimeout(syncBottomPlayIcon, 50);
+      stopProgressRAF();
+      setAudioProgress(1);
+      _progressHideTimeoutId = setTimeout(() => {
+        setAudioProgressActive(false);
+        setAudioProgress(0);
+      }, 300);
+    });
+    player.addEventListener('emptied', () => {
+      clearProgressHideTimeout();
+      stopProgressRAF();
+      setAudioProgressActive(false);
+      setAudioProgress(0);
+    });
   }
 
   const speedSel = getEl('speed-control');
   if (speedSel) speedSel.addEventListener('change', syncBottomSpeedLabel);
+}
+
+// ─── Audio progress RAF helpers ───────────────────────────────────────────────
+
+let _progressRAFId = null;
+let _progressHideTimeoutId = null;
+
+function clearProgressHideTimeout() {
+  if (_progressHideTimeoutId !== null) {
+    clearTimeout(_progressHideTimeoutId);
+    _progressHideTimeoutId = null;
+  }
+}
+
+/** Start a requestAnimationFrame loop that keeps the strip in sync with audio */
+function startProgressRAF() {
+  stopProgressRAF();
+  const player = getEl('audio-player');
+  if (!player) return;
+
+  function frame() {
+    if (player.duration > 0) {
+      setAudioProgress(player.currentTime / player.duration);
+    }
+    _progressRAFId = requestAnimationFrame(frame);
+  }
+  _progressRAFId = requestAnimationFrame(frame);
+}
+
+/** Cancel the running RAF loop */
+function stopProgressRAF() {
+  if (_progressRAFId !== null) {
+    cancelAnimationFrame(_progressRAFId);
+    _progressRAFId = null;
+  }
+}
+
+/**
+ * Show or hide the audio progress strip.
+ * @param {boolean} active
+ */
+function setAudioProgressActive(active) {
+  const strip = getEl('audio-progress-strip');
+  if (strip) strip.classList.toggle('is-playing', active);
+}
+
+/**
+ * Set the strip fill width directly.
+ * @param {number} ratio — 0.0 to 1.0
+ */
+function setAudioProgress(ratio) {
+  const fill = getEl('audio-progress-fill');
+  if (fill) fill.style.width = (Math.min(ratio, 1) * 100).toFixed(3) + '%';
 }
 
 // ─── Utilities ──────────────────────────────────────────────────────

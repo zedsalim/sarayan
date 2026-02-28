@@ -270,6 +270,10 @@
 
     <!-- Bottom Controls Bar -->
     <div class="bottom-controls" id="bottom-controls">
+      <div class="audio-progress-strip" id="audio-progress-strip">
+        <div class="audio-progress-strip__fill" id="audio-progress-fill"></div>
+      </div>
+
       <button
         class="ctrl-btn speed-btn"
         onclick="changeSpeed(-1)"
@@ -307,6 +311,7 @@
       >
         <i class="bi bi-play-fill" id="bottom-play-icon"></i>
       </button>
+
       <button class="ctrl-btn" onclick="stopAudio()" title="إيقاف">
         <i class="bi bi-stop-fill"></i>
       </button>
