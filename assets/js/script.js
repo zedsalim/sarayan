@@ -1057,39 +1057,30 @@ function updatePauseButton() {
   if (pauseBtn) pauseBtn.innerHTML = html;
 }
 
-/** Switch the reciter while audio is actively playing */
+/** Switch the reciter while audio is actively playing or paused */
 async function changeReciterDuringPlayback(newReciter) {
-  if (!state.isPlaying || !state.currentAyah || !state.audioPlayer) return;
+  if (!state.currentAyah || !state.audioPlayer) return;
 
-  if (!state.audioPlayer.paused) {
-    const currentPlayingAyah = state.playQueue[state.currentPlayIndex];
-    const useLocal = await checkLocalAudioAvailable(
-      newReciter,
-      currentPlayingAyah.sura_no,
-    );
-    state.useLocalAudio = useLocal;
+  const isActivelyPlaying = !state.audioPlayer.paused;
+  const isPaused = state.audioPlayer.paused && hasActiveAudioSrc();
 
-    const audioSrc = useLocal
-      ? buildAudioPath(
-          newReciter,
-          currentPlayingAyah.sura_no,
-          currentPlayingAyah.aya_no,
-        )
-      : getFallbackAudioUrl(
-          newReciter,
-          currentPlayingAyah.sura_no,
-          currentPlayingAyah.aya_no,
-        ) ||
-        buildAudioPath(
-          newReciter,
-          currentPlayingAyah.sura_no,
-          currentPlayingAyah.aya_no,
-        );
+  if (!isActivelyPlaying && !isPaused) return;
 
-    state.audioPlayer.src = audioSrc;
-    state.audioPlayer.playbackRate = parseFloat(
-      getEl('speed-control')?.value || '1',
-    );
+  const ayah = state.playQueue[state.currentPlayIndex] ?? state.currentAyah;
+  const useLocal = await checkLocalAudioAvailable(newReciter, ayah.sura_no);
+  state.useLocalAudio = useLocal;
+
+  const audioSrc = useLocal
+    ? buildAudioPath(newReciter, ayah.sura_no, ayah.aya_no)
+    : getFallbackAudioUrl(newReciter, ayah.sura_no, ayah.aya_no) ||
+      buildAudioPath(newReciter, ayah.sura_no, ayah.aya_no);
+
+  state.audioPlayer.src = audioSrc;
+  state.audioPlayer.playbackRate = parseFloat(
+    getEl('speed-control')?.value || '1',
+  );
+
+  if (isActivelyPlaying) {
     state.audioPlayer.play().catch((error) => {
       console.error('Error playing audio with new reciter:', error);
     });
