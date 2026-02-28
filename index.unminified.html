@@ -108,27 +108,31 @@
 
           <div class="offcanvas-body px-4 py-3 overflow-auto">
             <div class="mb-3">
-              <label for="surah-select" class="form-label">السورة</label>
+              <label for="surah-select" class="form-label fw-bold"
+                >السورة</label
+              >
               <select id="surah-select" class="form-select"></select>
             </div>
 
             <div class="mb-3">
-              <label for="juz-select" class="form-label">الجزء</label>
+              <label for="juz-select" class="form-label fw-bold">الجزء</label>
               <select id="juz-select" class="form-select"></select>
             </div>
 
             <div class="mb-3">
-              <label for="page-select" class="form-label">الصفحة</label>
+              <label for="page-select" class="form-label fw-bold">الصفحة</label>
               <select id="page-select" class="form-select"></select>
             </div>
 
             <div class="mb-3">
-              <label for="ayah-select" class="form-label">الآية</label>
+              <label for="ayah-select" class="form-label fw-bold">الآية</label>
               <select id="ayah-select" class="form-select"></select>
             </div>
 
             <div class="mb-3">
-              <label for="riwaya-select" class="form-label">الرواية</label>
+              <label for="riwaya-select" class="form-label fw-bold"
+                >الرواية</label
+              >
               <select id="riwaya-select" class="form-select">
                 <option value="warsh">ورش عن نافع</option>
                 <option value="hafs">حفص عن عاصم</option>
@@ -136,14 +140,18 @@
             </div>
 
             <div class="mb-3">
-              <label for="reciter-select" class="form-label">القارئ</label>
+              <label for="reciter-select" class="form-label fw-bold"
+                >القارئ</label
+              >
               <select id="reciter-select" class="form-select">
                 <option value="">اختر القارئ</option>
               </select>
             </div>
 
             <div class="mb-3">
-              <label for="speed-control" class="form-label">سرعة التشغيل</label>
+              <label for="speed-control" class="form-label fw-bold"
+                >سرعة التشغيل</label
+              >
               <select id="speed-control" class="form-select">
                 <option value="0.5">0.5x</option>
                 <option value="0.75">0.75x</option>
@@ -155,7 +163,9 @@
             </div>
 
             <div class="mb-3">
-              <label for="repeat-control" class="form-label">التكرار</label>
+              <label for="repeat-control" class="form-label fw-bold"
+                >التكرار</label
+              >
               <select id="repeat-control" class="form-select">
                 <option value="1" selected>مرة واحدة</option>
                 <option value="2">مرتين</option>
@@ -166,7 +176,9 @@
             </div>
 
             <div class="mb-3">
-              <label for="play-mode" class="form-label">وضع التشغيل</label>
+              <label for="play-mode" class="form-label fw-bold"
+                >وضع التشغيل</label
+              >
               <select id="play-mode" class="form-select">
                 <option value="aya" selected>آية</option>
                 <option value="page">صفحة</option>
@@ -176,7 +188,9 @@
             </div>
 
             <div class="mb-3">
-              <label for="font-size-control" class="form-label">حجم الخط</label>
+              <label for="font-size-control" class="form-label fw-bold"
+                >حجم الخط</label
+              >
               <select id="font-size-control" class="form-select">
                 <option value="20">صغير جداً</option>
                 <option value="24">صغير</option>
@@ -188,13 +202,13 @@
             </div>
 
             <div class="d-grid gap-2 mb-3">
-              <button id="play-btn" class="btn btn-custom">
+              <button id="play-btn" class="btn btn-custom fw-bold">
                 <i class="bi bi-play-fill"></i> تشغيل
               </button>
-              <button id="pause-btn" class="btn btn-custom">
+              <button id="pause-btn" class="btn btn-custom fw-bold">
                 <i class="bi bi-pause-fill"></i> إيقاف مؤقت
               </button>
-              <button id="stop-btn" class="btn btn-custom">
+              <button id="stop-btn" class="btn btn-custom fw-bold">
                 <i class="bi bi-stop-fill"></i> إيقاف
               </button>
             </div>
@@ -216,12 +230,15 @@
                     <button id="prev-page" class="nav-btn me-3">
                       <i class="bi bi-chevron-right"></i>
                     </button>
-                    <div class="text-center page-info-wrapper flex-grow-1">
-                      <h3 id="sura-title" class="mb-1 fw-bold"></h3>
-                      <p id="page-info" class="mb-0"></p>
+                    <div
+                      class="text-center flex-grow-1"
+                      style="min-width: 200px; max-width: 500px"
+                    >
+                      <h3 id="sura-title" class="mb-1 fw-bold fs-5"></h3>
+                      <p id="page-info" class="mb-0 small"></p>
                       <button
                         id="riwaya-badge"
-                        class="riwaya-badge"
+                        class="riwaya-badge btn rounded-pill px-3 py-1 mt-1 d-inline-flex align-items-center gap-1"
                         onclick="cycleRiwaya()"
                         title="تغيير الرواية"
                       >
@@ -385,7 +402,6 @@
               </h6>
               <p class="warsh-text fs-5 lh-lg mb-0">
                 الخط المستخدم في هذا الموقع مقدَّم من
-
                 <a
                   href="https://qurancomplex.gov.sa/quran-dev/"
                   target="_blank"
@@ -436,7 +452,9 @@
       aria-hidden="true"
     >
       <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content about-modal-content">
+        <div
+          class="modal-content about-modal-content rounded-4 overflow-hidden"
+        >
           <div class="modal-header about-modal-header border-0 py-3 px-4">
             <h5
               class="modal-title fw-bold text-white fs-5"
@@ -487,10 +505,7 @@
               >
                 <i class="bi bi-download"></i> استخدام التطبيق
               </h6>
-              <ul
-                class="about-text fs-5 lh-lg mb-0 ps-0"
-                style="list-style: none"
-              >
+              <ul class="about-text fs-5 lh-lg mb-0 ps-0 list-unstyled">
                 <li class="mb-1">
                   <strong>أونلاين:</strong>
                   <a
@@ -523,10 +538,7 @@
               >
                 <i class="bi bi-heart-fill"></i> المصادر
               </h6>
-              <ul
-                class="about-text fs-5 lh-lg mb-0 ps-0"
-                style="list-style: none"
-              >
+              <ul class="about-text fs-5 lh-lg mb-0 ps-0 list-unstyled">
                 <li class="mb-1">
                   النص والخطوط:
                   <a

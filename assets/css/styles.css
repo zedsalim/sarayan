@@ -84,7 +84,6 @@ body {
 /* ── Form controls (color overrides only) ──────────────────────────────────── */
 
 .form-label {
-  font-weight: bold;
   color: var(--c-text-md);
 }
 
@@ -112,7 +111,6 @@ body {
   background-color: var(--c-brown);
   color: #fff;
   border: none;
-  font-weight: bold;
   transition: all 0.3s ease;
 }
 
@@ -128,30 +126,6 @@ body {
   transform: translateY(0);
 }
 
-/* ── Menu button ───────────────────────────────────────────────────────────── */
-
-.menu-btn {
-  background-color: var(--c-brown);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  width: 45px;
-  height: 45px;
-  font-size: 24px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.menu-btn:hover {
-  background-color: var(--c-brown-dk);
-}
-.menu-btn:active {
-  transform: scale(0.95);
-}
-
 /* ── Nav buttons ───────────────────────────────────────────────────────────── */
 
 .nav-btn {
@@ -161,7 +135,7 @@ body {
   border-radius: 50%;
   width: 45px;
   height: 45px;
-  font-size: 20px;
+  font-size: 1.25rem;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
@@ -176,22 +150,15 @@ body {
 .nav-btn:disabled {
   background-color: var(--c-border);
   cursor: not-allowed;
-  transform: none;
 }
 
 /* ── Riwaya badge ──────────────────────────────────────────────────────────── */
 
 .riwaya-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 4px;
-  padding: 3px 14px;
   background-color: var(--c-brown);
   color: #fff;
   border: none;
-  border-radius: 20px;
-  font-size: 16px;
+  font-size: 1rem;
   font-family: 'Amiri', Arial, sans-serif;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -199,7 +166,7 @@ body {
 
 .riwaya-badge::after {
   content: '⇅';
-  font-size: 16px;
+  font-size: 1rem;
   opacity: 0.8;
 }
 .riwaya-badge:hover {
@@ -229,17 +196,10 @@ body {
 }
 
 #sura-title {
-  font-size: 24px;
   color: var(--c-text-md);
 }
 #page-info {
-  font-size: 15px;
   color: var(--c-text-lt);
-}
-
-.page-info-wrapper {
-  min-width: 200px;
-  max-width: 500px;
 }
 
 /* ── Main content layout ───────────────────────────────────────────────────── */
@@ -308,21 +268,15 @@ body {
 
 .basmala {
   text-align: center;
-  font-size: 28px;
   font-family: 'Amiri', serif;
-  margin: 15px 0;
   color: var(--c-text-md);
 }
 
 .sura-header {
   text-align: center;
-  font-size: 32px;
   font-family: 'Amiri', serif;
   color: var(--c-text-md);
-  margin: 25px 0;
-  padding: 15px;
   background-color: var(--c-panel);
-  border-radius: 10px;
   border: 2px solid var(--c-border);
 }
 
@@ -353,7 +307,7 @@ body {
   border-radius: 50%;
   width: 34px;
   height: 34px;
-  font-size: 15px;
+  font-size: 0.9375rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -380,7 +334,7 @@ body {
 .ctrl-btn--primary {
   width: 42px;
   height: 42px;
-  font-size: 18px;
+  font-size: 1.125rem;
   background: #c4a882;
   border-color: #c4a882;
   color: var(--c-text);
@@ -397,13 +351,13 @@ body {
 .speed-btn {
   width: 28px;
   height: 28px;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .speed-label {
   color: #f4ecd8;
   font-family: 'Amiri', Arial, sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem;
   min-width: 28px;
   text-align: center;
   font-weight: bold;
@@ -426,7 +380,7 @@ body {
     padding: 30px;
   }
   .sura-header {
-    font-size: 30px;
+    font-size: 1.875rem;
   }
   .basmala {
     font-size: 26px;
@@ -443,49 +397,36 @@ body {
   .ctrl-btn {
     width: 30px;
     height: 30px;
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
   .ctrl-btn--primary {
     width: 38px;
     height: 38px;
-    font-size: 16px;
+    font-size: 1rem;
   }
   .speed-btn {
     width: 24px;
     height: 24px;
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
   .speed-label {
-    font-size: 12px;
+    font-size: 0.75rem;
     min-width: 24px;
   }
-
   .header {
     padding: 10px 5px;
   }
-  .nav-btn,
-  .menu-btn {
+  .nav-btn {
     width: 40px;
     height: 40px;
-  }
-  .nav-btn {
-    font-size: 18px;
-  }
-  .menu-btn {
-    font-size: 20px;
-  }
-
-  .page-info-wrapper {
-    min-width: 150px;
-    max-width: 100%;
+    font-size: 1.125rem;
   }
   #sura-title {
-    font-size: 18px;
+    font-size: 1.125rem;
   }
   #page-info {
-    font-size: 12px;
+    font-size: 0.75rem;
   }
-
   .quran-text-container {
     padding: 15px 15px 30px;
   }
@@ -498,26 +439,23 @@ body {
     border-image-width: 20px;
   }
   .sura-header {
-    font-size: 24px;
-    padding: 12px;
-    margin: 15px 0;
+    font-size: 1.5rem;
   }
   .basmala {
     font-size: 20px;
-    margin: 10px 0;
   }
   .offcanvas {
     width: 280px !important;
   }
   .form-label {
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
   .form-select {
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
   .btn-custom {
     padding: 10px;
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
 }
 
@@ -525,10 +463,10 @@ body {
 
 @media (max-width: 374px) {
   #sura-title {
-    font-size: 16px;
+    font-size: 1rem;
   }
   #page-info {
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
   .quran-text {
     font-size: 18px;
@@ -537,16 +475,15 @@ body {
     border-image-width: 16px;
   }
   .sura-header {
-    font-size: 20px;
+    font-size: 1.25rem;
   }
   .basmala {
     font-size: 18px;
   }
-  .nav-btn,
-  .menu-btn {
+  .nav-btn {
     width: 36px;
     height: 36px;
-    font-size: 16px;
+    font-size: 1rem;
   }
 }
 
@@ -556,16 +493,15 @@ body {
   .header {
     padding: 8px 5px;
   }
-  .nav-btn,
-  .menu-btn {
+  .nav-btn {
     width: 35px;
     height: 35px;
   }
   #sura-title {
-    font-size: 16px;
+    font-size: 1rem;
   }
   #page-info {
-    font-size: 12px;
+    font-size: 0.75rem;
   }
   .quran-text-container {
     padding: 10px;
@@ -579,11 +515,12 @@ body {
   }
 }
 
-/* ── Floating Menu Button (FAB) ────────────────────────────────────────────── */
+/* ── FAB buttons (shared base) ─────────────────────────────────────────────── */
 
-.fab-menu-btn {
+.fab-menu-btn,
+.fab-fullscreen-btn,
+.fab-about-btn {
   position: fixed;
-  bottom: 70px;
   left: 17px;
   z-index: 1050;
   background-color: var(--c-brown);
@@ -592,7 +529,7 @@ body {
   border-radius: 50%;
   width: 38px;
   height: 38px;
-  font-size: 18px;
+  font-size: 1.125rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -601,23 +538,49 @@ body {
   transition: all 0.25s ease;
 }
 
-.fab-menu-btn:hover {
-  background-color: var(--c-brown-dk);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
-  animation: none;
+.fab-menu-btn {
+  bottom: 70px;
+}
+.fab-fullscreen-btn {
+  bottom: 120px;
+}
+.fab-about-btn {
+  bottom: 170px;
 }
 
-.fab-menu-btn:active {
+.fab-menu-btn:hover,
+.fab-fullscreen-btn:hover,
+.fab-about-btn:hover {
+  background-color: var(--c-brown-dk);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+}
+
+.fab-menu-btn:active,
+.fab-fullscreen-btn:active,
+.fab-about-btn:active {
   transform: scale(0.95);
-  animation: none;
 }
 
 @media (max-width: 767px) {
   .fab-menu-btn {
     width: 32px;
     height: 32px;
-    font-size: 16px;
+    font-size: 1rem;
     bottom: 60px;
+    left: 11px;
+  }
+  .fab-fullscreen-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+    bottom: 104px;
+    left: 11px;
+  }
+  .fab-about-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+    bottom: 150px;
     left: 11px;
   }
 }
@@ -634,46 +597,6 @@ body.fullscreen-mode .header {
 
 body.fullscreen-mode .quran-text-container {
   padding-top: 10px;
-}
-
-/* FAB fullscreen buttons base */
-.fab-fullscreen-btn {
-  position: fixed;
-  bottom: 120px;
-  left: 17px;
-  z-index: 1050;
-  background-color: var(--c-brown);
-  color: #fff;
-  border: none;
-  border-radius: 50%;
-  width: 38px;
-  height: 38px;
-  font-size: 18px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
-  transition: all 0.25s ease;
-}
-
-.fab-fullscreen-btn:hover {
-  background-color: var(--c-brown-dk);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
-}
-
-.fab-fullscreen-btn:active {
-  transform: scale(0.95);
-}
-
-@media (max-width: 767px) {
-  .fab-fullscreen-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 16px;
-    bottom: 104px;
-    left: 11px;
-  }
 }
 
 .fab-fullscreen-enter {
@@ -699,6 +622,7 @@ body.fullscreen-mode .fab-fullscreen-exit {
 }
 
 /* ── Warsh Info Modal ──────────────────────────────────────────────────────── */
+
 .warsh-font {
   font-family: 'Uthmanic', serif;
 }
@@ -728,7 +652,6 @@ body.fullscreen-mode .fab-fullscreen-exit {
 .warsh-card-title {
   color: var(--c-brown-dk);
 }
-
 .warsh-text {
   color: var(--c-text-md);
 }
@@ -817,63 +740,11 @@ body.fullscreen-mode .fab-fullscreen-exit {
   pointer-events: none;
 }
 
-@media (max-width: 576px) {
-  .warsh-modal-footer {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .warsh-close-btn {
-    text-align: center;
-  }
-}
-
-/* ── About FAB ─────────────────────────────────────────────────────────────── */
-.fab-about-btn {
-  position: fixed;
-  bottom: 170px;
-  left: 17px;
-  z-index: 1050;
-  background-color: var(--c-brown);
-  color: #fff;
-  border: none;
-  border-radius: 50%;
-  width: 38px;
-  height: 38px;
-  font-size: 18px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
-  transition: all 0.25s ease;
-}
-
-.fab-about-btn:hover {
-  background-color: var(--c-brown-dk);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
-}
-
-.fab-about-btn:active {
-  transform: scale(0.95);
-}
-
-@media (max-width: 767px) {
-  .fab-about-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 16px;
-    bottom: 150px;
-    left: 11px;
-  }
-}
-
 /* ── About Modal ────────────────────────────────────────────────────────────── */
+
 .about-modal-content {
   background-color: var(--c-bg);
   border: 1px solid var(--c-border);
-  border-radius: 16px;
-  overflow: hidden;
 }
 
 .about-modal-header {
@@ -891,9 +762,7 @@ body.fullscreen-mode .fab-fullscreen-exit {
 
 .about-card-title {
   color: var(--c-brown);
-  font-size: 1rem;
 }
-
 .about-text {
   color: var(--c-text);
 }
@@ -914,7 +783,6 @@ body.fullscreen-mode .fab-fullscreen-exit {
   .offcanvas,
   .header,
   .nav-btn,
-  .menu-btn,
   .fab-menu-btn,
   .fab-about-btn,
   .bottom-controls {
