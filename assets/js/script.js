@@ -24,7 +24,7 @@ const RIWAYA_CONFIG = {
       'assets/audio/json/quran_audio_urls-4_warsh.min.json',
       'assets/audio/json/quran_audio_urls-5_warsh.min.json',
     ],
-    font: 'Uthmanic',
+    font: 'UthmanicWarsh',
     reciters: {
       'mahmoud_khalil_al-hussary': 'محمود خليل الحصري',
       yassen_al_jazairi: 'ياسين الجزائري',
@@ -1429,6 +1429,78 @@ function initializeEventListeners() {
     }
   });
 }
+
+// ── Speed-dial FAB ──
+const fabDial = document.getElementById('fab-speed-dial');
+const fabTrigger = document.getElementById('fab-trigger');
+function toggleFab() {
+  const isOpen = fabDial.classList.toggle('open');
+  fabTrigger.setAttribute('aria-expanded', isOpen);
+}
+function closeFab() {
+  fabDial.classList.remove('open');
+  fabTrigger.setAttribute('aria-expanded', 'false');
+}
+// Sidebar button wired manually
+document
+  .getElementById('fab-sidebar-btn')
+  .addEventListener('click', function () {
+    closeFab();
+    const offcanvasEl = document.getElementById('offcanvasSidebar');
+    const bsOffcanvas = bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl);
+    bsOffcanvas.show();
+  });
+// About button
+document.getElementById('fab-about-btn').addEventListener('click', function () {
+  closeFab();
+  const aboutEl = document.getElementById('aboutModal');
+  const bsModal = bootstrap.Modal.getOrCreateInstance(aboutEl);
+  bsModal.show();
+});
+// Close FAB on Escape
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') closeFab();
+});
+
+// ── Theme Toggle ──
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-mode');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  updateThemeUI(isLight);
+}
+
+function updateThemeUI(isLight) {
+  const icon = document.getElementById('theme-icon');
+  const text = document.getElementById('theme-text');
+  const fabIcon = document.getElementById('fab-theme-icon');
+
+  if (icon)
+    icon.className = isLight ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
+
+  if (text) text.textContent = isLight ? 'الوضع النهاري' : 'الوضع الليلي';
+
+  if (fabIcon)
+    fabIcon.className = isLight ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
+}
+
+// Apply theme on load
+(function () {
+  let saved = localStorage.getItem('theme');
+
+  // If no theme saved
+  if (!saved) {
+    saved = 'light';
+    localStorage.setItem('theme', 'light');
+  }
+
+  const isLight = saved === 'light';
+
+  if (isLight) {
+    document.body.classList.add('light-mode');
+  }
+
+  updateThemeUI(isLight);
+})();
 
 // ─── Bottom Controls Bar ──────────────────────────────────────────────────────
 

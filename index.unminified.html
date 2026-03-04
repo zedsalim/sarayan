@@ -35,7 +35,6 @@
     />
     <meta property="og:locale" content="ar_AR" />
     <meta property="og:site_name" content="سَرَيان | Sarayan" />
-
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:url" content="https://sarayan.pages.dev/" />
     <meta
@@ -80,78 +79,86 @@
     <!-- Custom CSS -->
     <!-- <link rel="stylesheet" href="assets/css/styles.min.css" /> -->
     <link rel="stylesheet" href="assets/css/styles.css" />
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="assets/js/bootstrap.bundle.min.js" defer></script>
   </head>
   <body>
-    <div class="container-fluid h-100 p-0">
-      <div class="row g-0 h-100">
-        <!-- Offcanvas Sidebar -->
-        <div
-          class="offcanvas offcanvas-start"
-          tabindex="-1"
-          id="offcanvasSidebar"
-          aria-labelledby="offcanvasSidebarLabel"
-        >
-          <div class="offcanvas-header px-4 py-3">
-            <img
-              src="assets/imgs/logo.webp"
-              alt="سريان"
-              height="40"
-              id="offcanvasSidebarLabel"
-            />
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="offcanvas"
-              aria-label="Close"
-            ></button>
-          </div>
+    <div class="app-shell">
+      <!-- ── Sidebar Offcanvas ── -->
+      <div
+        class="offcanvas offcanvas-start"
+        tabindex="-1"
+        id="offcanvasSidebar"
+        aria-labelledby="offcanvasSidebarLabel"
+      >
+        <div class="offcanvas-header">
+          <img
+            src="assets/imgs/logo.webp"
+            alt="سريان"
+            height="36"
+            id="offcanvasSidebarLabel"
+            class="sidebar-logo"
+          />
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="offcanvas"
+            aria-label="Close"
+          ></button>
+        </div>
 
-          <div class="offcanvas-body px-4 py-3 overflow-auto">
-            <div class="mb-3">
-              <label for="surah-select" class="form-label fw-bold"
-                >السورة</label
-              >
+        <div class="offcanvas-body">
+          <!-- Navigation -->
+          <div class="sidebar-section">
+            <div class="sidebar-section-title">
+              <i class="bi bi-compass"></i> التنقل
+            </div>
+            <div class="mb-2">
+              <label for="surah-select" class="form-label">السورة</label>
               <select id="surah-select" class="form-select"></select>
             </div>
-
-            <div class="mb-3">
-              <label for="juz-select" class="form-label fw-bold">الجزء</label>
+            <div class="mb-2">
+              <label for="juz-select" class="form-label">الجزء</label>
               <select id="juz-select" class="form-select"></select>
             </div>
-
-            <div class="mb-3">
-              <label for="page-select" class="form-label fw-bold">الصفحة</label>
+            <div class="mb-2">
+              <label for="page-select" class="form-label">الصفحة</label>
               <select id="page-select" class="form-select"></select>
             </div>
-
-            <div class="mb-3">
-              <label for="ayah-select" class="form-label fw-bold">الآية</label>
+            <div>
+              <label for="ayah-select" class="form-label">الآية</label>
               <select id="ayah-select" class="form-select"></select>
             </div>
+          </div>
 
-            <div class="mb-3">
-              <label for="riwaya-select" class="form-label fw-bold"
-                >الرواية</label
-              >
+          <!-- Recitation -->
+          <div class="sidebar-section">
+            <div class="sidebar-section-title">
+              <i class="bi bi-mic"></i> التلاوة
+            </div>
+            <div class="mb-2">
+              <label for="riwaya-select" class="form-label">الرواية</label>
               <select id="riwaya-select" class="form-select">
                 <option value="warsh">ورش عن نافع</option>
                 <option value="hafs">حفص عن عاصم</option>
               </select>
             </div>
-
-            <div class="mb-3">
-              <label for="reciter-select" class="form-label fw-bold"
-                >القارئ</label
-              >
+            <div>
+              <label for="reciter-select" class="form-label">القارئ</label>
               <select id="reciter-select" class="form-select">
                 <option value="">اختر القارئ</option>
               </select>
             </div>
+          </div>
 
-            <div class="mb-3">
-              <label for="speed-control" class="form-label fw-bold"
-                >سرعة التشغيل</label
-              >
+          <!-- Playback Settings -->
+          <div class="sidebar-section">
+            <div class="sidebar-section-title">
+              <i class="bi bi-sliders"></i> التشغيل
+            </div>
+            <div class="mb-2">
+              <label for="speed-control" class="form-label">سرعة التشغيل</label>
               <select id="speed-control" class="form-select">
                 <option value="0.5">0.5x</option>
                 <option value="0.75">0.75x</option>
@@ -161,11 +168,8 @@
                 <option value="2">2x</option>
               </select>
             </div>
-
-            <div class="mb-3">
-              <label for="repeat-control" class="form-label fw-bold"
-                >التكرار</label
-              >
+            <div class="mb-2">
+              <label for="repeat-control" class="form-label">التكرار</label>
               <select id="repeat-control" class="form-select">
                 <option value="1" selected>مرة واحدة</option>
                 <option value="2">مرتين</option>
@@ -174,11 +178,8 @@
                 <option value="infinite">دائماً</option>
               </select>
             </div>
-
-            <div class="mb-3">
-              <label for="play-mode" class="form-label fw-bold"
-                >وضع التشغيل</label
-              >
+            <div>
+              <label for="play-mode" class="form-label">وضع التشغيل</label>
               <select id="play-mode" class="form-select">
                 <option value="aya" selected>آية</option>
                 <option value="page">صفحة</option>
@@ -186,11 +187,15 @@
                 <option value="juz">جزء</option>
               </select>
             </div>
+          </div>
 
-            <div class="mb-3">
-              <label for="font-size-control" class="form-label fw-bold"
-                >حجم الخط</label
-              >
+          <!-- Display Settings -->
+          <div class="sidebar-section">
+            <div class="sidebar-section-title">
+              <i class="bi bi-type"></i> العرض
+            </div>
+            <div>
+              <label for="font-size-control" class="form-label">حجم الخط</label>
               <select id="font-size-control" class="form-select">
                 <option value="20">صغير جداً</option>
                 <option value="24">صغير</option>
@@ -200,75 +205,87 @@
                 <option value="40">ضخم</option>
               </select>
             </div>
-
-            <div class="d-grid gap-2 mb-3">
-              <button id="play-btn" class="btn btn-custom fw-bold">
-                <i class="bi bi-play-fill"></i> تشغيل
-              </button>
-              <button id="pause-btn" class="btn btn-custom fw-bold">
-                <i class="bi bi-pause-fill"></i> إيقاف مؤقت
-              </button>
-              <button id="stop-btn" class="btn btn-custom fw-bold">
-                <i class="bi bi-stop-fill"></i> إيقاف
+            <div style="margin-top: 10px">
+              <button
+                class="theme-toggle-btn"
+                id="theme-toggle-btn"
+                onclick="toggleTheme()"
+              >
+                <span
+                  id="theme-toggle-label"
+                  style="display: flex; align-items: center; gap: 7px"
+                >
+                  <i class="bi bi-moon-stars-fill" id="theme-icon"></i>
+                  <span id="theme-text">الوضع الليلي</span>
+                </span>
+                <div class="theme-toggle-track"></div>
               </button>
             </div>
+          </div>
 
-            <div class="mt-3">
-              <audio id="audio-player" class="w-100 rounded" controls></audio>
+          <!-- Playback Controls -->
+          <div class="sidebar-section">
+            <div class="sidebar-section-title">
+              <i class="bi bi-play-circle"></i> التحكم
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 10px">
+              <button id="play-btn" class="btn-custom" style="flex: 1">
+                <i class="bi bi-play-fill"></i> تشغيل
+              </button>
+              <button
+                id="pause-btn"
+                class="btn-custom btn-secondary"
+                style="flex: 1"
+              >
+                <i class="bi bi-pause-fill"></i> إيقاف مؤقت
+              </button>
+            </div>
+            <button id="stop-btn" class="btn-custom btn-secondary">
+              <i class="bi bi-stop-fill"></i> إيقاف
+            </button>
+            <div style="margin-top: 12px">
+              <audio id="audio-player" class="w-100" controls></audio>
             </div>
           </div>
         </div>
-
-        <!-- Main Content -->
-        <main class="col-12 main-content">
-          <!-- Header -->
-          <div class="header">
-            <div class="container-fluid">
-              <div class="row align-items-center g-0">
-                <div class="col">
-                  <div class="d-flex align-items-center justify-content-center">
-                    <button id="prev-page" class="nav-btn me-3">
-                      <i class="bi bi-chevron-right"></i>
-                    </button>
-                    <div
-                      class="text-center flex-grow-1"
-                      style="min-width: 200px; max-width: 500px"
-                    >
-                      <h3 id="sura-title" class="mb-1 fw-bold fs-5"></h3>
-                      <p id="page-info" class="mb-0 small"></p>
-                      <button
-                        id="riwaya-badge"
-                        class="riwaya-badge btn rounded-pill px-3 py-1 mt-1 d-inline-flex align-items-center gap-1"
-                        onclick="cycleRiwaya()"
-                        title="تغيير الرواية"
-                      >
-                        ورش
-                      </button>
-                    </div>
-                    <button id="next-page" class="nav-btn ms-3">
-                      <i class="bi bi-chevron-left"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Quran Text -->
-          <div class="quran-text-container">
-            <div class="container-fluid">
-              <div class="row justify-content-center">
-                <div class="col-12 col-lg-11 col-xl-10">
-                  <div id="quran-text" class="quran-text"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </main>
       </div>
+
+      <!-- ── Main Content ── -->
+      <main class="main-content">
+        <!-- Header -->
+        <div class="header">
+          <div class="header-inner">
+            <button id="prev-page" class="nav-btn">
+              <i class="bi bi-chevron-right"></i>
+            </button>
+            <div class="header-title-block">
+              <div id="sura-title"></div>
+              <div id="page-info"></div>
+              <button
+                id="riwaya-badge"
+                class="riwaya-badge"
+                onclick="cycleRiwaya()"
+                title="تغيير الرواية"
+              >
+                ورش
+              </button>
+            </div>
+            <button id="next-page" class="nav-btn">
+              <i class="bi bi-chevron-left"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quran Text -->
+        <div class="quran-text-container">
+          <div class="quran-text-inner">
+            <div id="quran-text" class="quran-text"></div>
+          </div>
+        </div>
+      </main>
     </div>
 
-    <!-- Bottom Controls Bar -->
+    <!-- ── Bottom Controls Bar ── -->
     <div class="bottom-controls" id="bottom-controls">
       <div class="audio-progress-strip" id="audio-progress-strip">
         <div class="audio-progress-strip__fill" id="audio-progress-fill"></div>
@@ -315,7 +332,6 @@
       <button class="ctrl-btn" onclick="stopAudio()" title="إيقاف">
         <i class="bi bi-stop-fill"></i>
       </button>
-
       <button class="ctrl-btn" onclick="bottomNavNext()" title="الآية التالية">
         <i class="bi bi-skip-start-fill"></i>
       </button>
@@ -328,7 +344,7 @@
       </button>
     </div>
 
-    <!-- Magharibi Style Modal -->
+    <!-- ── Warsh Info Modal ── -->
     <div
       class="modal fade"
       id="warshInfoModal"
@@ -341,103 +357,90 @@
       <div
         class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg"
       >
-        <div class="modal-content warsh-modal-content">
-          <div class="modal-header warsh-modal-header border-0 py-3 px-4">
-            <h5
-              class="modal-title fw-bold text-white fs-4"
-              id="warshInfoModalLabel"
-            >
+        <div class="modal-content">
+          <div class="modal-header warsh-modal-header">
+            <h5 class="modal-title" id="warshInfoModalLabel">
               تنبيه حول الخط المغربي
             </h5>
           </div>
-
-          <div class="modal-body d-flex flex-column gap-3 p-3 p-md-4">
-            <div class="warsh-card rounded-3 border p-3">
+          <div class="modal-body d-flex flex-column gap-3">
+            <div class="warsh-card">
               <h6
-                class="warsh-card-title fw-bold fs-5 mb-2 d-flex align-items-center gap-2"
+                class="warsh-card-title d-flex align-items-center gap-2 fw-bold fs-6 mb-2"
               >
                 <span class="warsh-dot warsh-dot-brown"></span>
-                الخط في ورش لماذا يبدو مختلفاً؟
+                الخط في ورش — لماذا يبدو مختلفاً؟
               </h6>
-              <p class="warsh-text fs-5 lh-lg mb-3">
-                يعتمد هذا الموقع الخطَّ <strong>العثماني المغربي</strong> لعرض
-                نص ورش، وهو خط أصيل له قواعد مختلفة عن الخط المشرقي المعهود:
+              <p class="warsh-text mb-3" style="line-height: 1.9">
+                يعتمد هذا الموقع الخطَّ
+                <strong style="color: var(--gold-light)"
+                  >العثماني المغربي</strong
+                >
+                لعرض نص ورش، وهو خط أصيل له قواعد مختلفة عن الخط المشرقي
+                المعهود:
               </p>
-
-              <div class="row g-2 mb-3">
+              <div class="row g-2 mb-2">
                 <div class="col-12 col-sm-4">
-                  <div
-                    class="warsh-letter-card rounded-2 border text-center py-3 px-1"
-                  >
+                  <div class="warsh-letter-card text-center py-3 px-1">
                     <div class="warsh-letter-demo warsh-font">ڧ</div>
-                    <div class="warsh-letter-label mt-2">
+                    <div class="warsh-letter-label mt-1">
                       قاف بنقطة واحدة فوق
                     </div>
                   </div>
                 </div>
                 <div class="col-12 col-sm-4">
-                  <div
-                    class="warsh-letter-card rounded-2 border text-center py-3 px-1"
-                  >
+                  <div class="warsh-letter-card text-center py-3 px-1">
                     <div class="warsh-letter-demo warsh-font">ڢ</div>
-                    <div class="warsh-letter-label mt-2">
+                    <div class="warsh-letter-label mt-1">
                       فاء بنقطة واحدة تحت
                     </div>
                   </div>
                 </div>
                 <div class="col-12 col-sm-4">
-                  <div
-                    class="warsh-letter-card rounded-2 border text-center py-3 px-1"
-                  >
+                  <div class="warsh-letter-card text-center py-3 px-1">
                     <div class="warsh-letter-demo warsh-font">ن</div>
-                    <div class="warsh-letter-label mt-2">
+                    <div class="warsh-letter-label mt-1">
                       نون في آخر الكلمة بدون نقطة أحياناً
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-
-            <div class="warsh-card warsh-card-trust rounded-3 border p-3">
+            <div class="warsh-card warsh-card-trust">
               <h6
-                class="warsh-card-title fw-bold fs-5 mb-2 d-flex align-items-center gap-2"
+                class="warsh-card-title d-flex align-items-center gap-2 fw-bold fs-6 mb-2"
               >
                 <span class="warsh-dot warsh-dot-gold"></span>
                 مصدر الخط
               </h6>
-              <p class="warsh-text fs-5 lh-lg mb-0">
-                الخط المستخدم في هذا الموقع مقدَّم من
+              <p class="warsh-text mb-0" style="line-height: 1.9">
+                الخط المستخدم مقدَّم من
                 <a
                   href="https://qurancomplex.gov.sa/quran-dev/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="warsh-link fw-bold text-decoration-none"
+                  class="warsh-link fw-bold"
+                  >مجمع الملك فهد لطباعة المصحف الشريف</a
                 >
-                  مجمع الملك فهد لطباعة المصحف الشريف
-                </a>
               </p>
             </div>
           </div>
-
           <div
-            class="modal-footer warsh-modal-footer border-top px-3 px-md-4 py-3 flex-wrap gap-2 justify-content-between align-items-center"
+            class="modal-footer warsh-modal-footer d-flex flex-wrap gap-2 justify-content-between align-items-center"
           >
             <div
               class="d-flex flex-column gap-1 flex-grow-1 warsh-progress-wrapper"
             >
-              <div class="warsh-progress-track rounded-pill overflow-hidden">
-                <div
-                  class="warsh-progress-bar rounded-pill"
-                  id="warshProgressBar"
-                ></div>
+              <div class="warsh-progress-track">
+                <div class="warsh-progress-bar" id="warshProgressBar"></div>
               </div>
-              <span class="small warsh-timer-label" id="warshTimerLabel">
-                انتظر <span id="warshCountdown">5</span>ث
-              </span>
+              <span class="warsh-timer-label" id="warshTimerLabel"
+                >انتظر <span id="warshCountdown">5</span>ث</span
+              >
             </div>
             <button
               type="button"
-              class="btn warsh-close-btn disabled fw-bold fs-6 px-4 py-2 rounded-3 text-nowrap"
+              class="warsh-close-btn disabled"
               id="warshCloseBtn"
               data-bs-dismiss="modal"
             >
@@ -448,7 +451,7 @@
       </div>
     </div>
 
-    <!-- About Modal -->
+    <!-- ── About Modal ── -->
     <div
       class="modal fade"
       id="aboutModal"
@@ -457,100 +460,83 @@
       aria-hidden="true"
     >
       <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div
-          class="modal-content about-modal-content rounded-4 overflow-hidden"
-        >
-          <div class="modal-header about-modal-header border-0 py-3 px-4">
-            <h5
-              class="modal-title fw-bold text-white fs-5"
-              id="aboutModalLabel"
-            >
-              عن سَرَيان
-            </h5>
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="aboutModalLabel">عن سَرَيان</h5>
             <button
               type="button"
               class="btn-close"
               data-bs-dismiss="modal"
               aria-label="Close"
-              style="filter: invert(1)"
+              style="filter: invert(1) opacity(0.6)"
             ></button>
           </div>
-
-          <div class="modal-body p-4 d-flex flex-column gap-3">
-            <div class="about-card rounded-3 border p-3">
-              <p class="about-text fs-5 lh-lg mb-0">
+          <div class="modal-body d-flex flex-column gap-3">
+            <div class="about-card">
+              <p class="about-text mb-0">
                 سَرَيان تطبيق ويب مفتوح المصدر لقراءة القرآن الكريم والاستماع
                 إليه لتسهيل الحفظ والمراجعة بروايتي
-                <strong>ورش عن نافع</strong> و<strong>حفص عن عاصم</strong>.
+                <strong style="color: var(--gold-light)">ورش عن نافع</strong>
+                و<strong style="color: var(--gold-light)">حفص عن عاصم</strong>.
               </p>
             </div>
-
-            <div class="about-card about-card-report rounded-3 border p-3">
-              <h6
-                class="about-card-title fw-bold mb-2 d-flex align-items-center gap-2"
-              >
+            <div class="about-card about-card-report">
+              <div class="about-card-title d-flex align-items-center gap-2">
                 <i class="bi bi-flag-fill"></i> لاحظتَ خطأً؟
-              </h6>
-              <p class="about-text fs-5 lh-lg mb-3">
+              </div>
+              <p class="about-text mb-3">
                 إذا وجدتَ خطأً في النص أو الصوت أو أي جانب آخر، لا تتردد في
                 إخبارنا.
               </p>
               <button
                 type="button"
-                class="btn about-report-btn fw-bold d-flex align-items-center gap-2 px-4 py-2"
+                class="about-report-btn"
                 data-bs-dismiss="modal"
                 data-bs-toggle="modal"
                 data-bs-target="#reportModal"
                 onclick="prefillReportModal()"
               >
-                <i class="bi bi-exclamation-triangle-fill"></i>
-                أبلغ عن خطأ
+                <i class="bi bi-exclamation-triangle-fill"></i> أبلغ عن خطأ
               </button>
             </div>
-
-            <div class="about-card rounded-3 border p-3">
-              <h6
-                class="about-card-title fw-bold mb-2 d-flex align-items-center gap-2"
-              >
+            <div class="about-card">
+              <div class="about-card-title d-flex align-items-center gap-2">
                 <i class="bi bi-github"></i> الكود
-              </h6>
-              <p class="about-text fs-5 lh-lg mb-0">
-                الكود المصدري متاح على GitHub:
-              </p>
+              </div>
+              <p class="about-text mb-1">الكود المصدري متاح على GitHub:</p>
               <a
                 href="https://github.com/zedsalim/sarayan"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="about-link fw-bold text-decoration-none d-inline-block mt-1"
+                class="about-link fw-bold"
+                >github.com/zedsalim/sarayan</a
               >
-                github.com/zedsalim/sarayan
-              </a>
             </div>
-
-            <div class="about-card rounded-3 border p-3">
-              <h6
-                class="about-card-title fw-bold mb-2 d-flex align-items-center gap-2"
-              >
+            <div class="about-card">
+              <div class="about-card-title d-flex align-items-center gap-2">
                 <i class="bi bi-download"></i> استخدام التطبيق
-              </h6>
-              <ul class="about-text fs-5 lh-lg mb-0 ps-0 list-unstyled">
-                <li class="mb-1">
+              </div>
+              <ul
+                class="about-text mb-0 ps-0 list-unstyled"
+                style="line-height: 2"
+              >
+                <li>
                   <strong>أونلاين:</strong>
                   <a
                     href="https://sarayan.pages.dev/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="about-link text-decoration-none"
+                    class="about-link"
                     >sarayan.pages.dev</a
                   >
                 </li>
-                <li class="mb-1">
+                <li>
                   <strong>أندرويد:</strong>
                   <a
                     href="https://github.com/zedsalim/sarayan/releases"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="about-link text-decoration-none"
+                    class="about-link"
                     >تحميل APK</a
                   >
                 </li>
@@ -559,28 +545,28 @@
                 </li>
               </ul>
             </div>
-
-            <div class="about-card rounded-3 border p-3">
-              <h6
-                class="about-card-title fw-bold mb-2 d-flex align-items-center gap-2"
-              >
+            <div class="about-card">
+              <div class="about-card-title d-flex align-items-center gap-2">
                 <i class="bi bi-heart-fill"></i> المصادر
-              </h6>
-              <ul class="about-text fs-5 lh-lg mb-0 ps-0 list-unstyled">
-                <li class="mb-1">
+              </div>
+              <ul
+                class="about-text mb-0 ps-0 list-unstyled"
+                style="line-height: 2"
+              >
+                <li>
                   النص والخطوط:
                   <a
                     href="https://qurancomplex.gov.sa/quran-dev/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="about-link text-decoration-none"
+                    class="about-link"
                     >مجمع الملك فهد</a
                   >,
                   <a
                     href="https://github.com/fawazahmed0/quran-api"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="about-link text-decoration-none"
+                    class="about-link"
                     >Quran API</a
                   >
                 </li>
@@ -590,7 +576,7 @@
                     href="https://www.versebyversequran.com/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="about-link text-decoration-none"
+                    class="about-link"
                     >VerseByVerseQuran.com</a
                   >
                 </li>
@@ -601,7 +587,7 @@
       </div>
     </div>
 
-    <!-- Report Error Modal -->
+    <!-- ── Report Error Modal ── -->
     <div
       class="modal fade"
       id="reportModal"
@@ -612,15 +598,16 @@
       <div
         class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg"
       >
-        <div
-          class="modal-content report-modal-content rounded-4 overflow-hidden"
-        >
-          <div class="modal-header report-modal-header border-0 py-3 px-4">
+        <div class="modal-content">
+          <div class="modal-header report-modal-header">
             <h5
-              class="modal-title fw-bold text-white fs-5 d-flex align-items-center gap-2"
+              class="modal-title d-flex align-items-center gap-2"
               id="reportModalLabel"
             >
-              <i class="bi bi-exclamation-triangle-fill"></i>
+              <i
+                class="bi bi-exclamation-triangle-fill"
+                style="color: #f08080"
+              ></i>
               أبلغ عن خطأ
             </h5>
             <button
@@ -628,35 +615,37 @@
               class="btn-close"
               data-bs-dismiss="modal"
               aria-label="Close"
-              style="filter: invert(1)"
+              style="filter: invert(1) opacity(0.6)"
             ></button>
           </div>
-
-          <div class="modal-body p-4">
+          <div class="modal-body">
             <form id="reportForm" novalidate>
-              <!-- Email -->
               <div class="mb-3">
-                <label for="r-email" class="form-label report-label fw-bold">
-                  <i class="bi bi-envelope-fill me-1"></i> البريد الإلكتروني *
-                </label>
+                <label for="r-email" class="report-label"
+                  ><i class="bi bi-envelope-fill me-1"></i>البريد الإلكتروني
+                  *</label
+                >
                 <input
                   type="email"
                   id="r-email"
-                  class="form-control report-input"
+                  class="report-input"
                   placeholder="example@email.com"
                   required
                   dir="ltr"
                 />
                 <div class="report-field-error" id="err-email"></div>
               </div>
-
-              <!-- Type + Subject row -->
               <div class="row g-3 mb-3">
                 <div class="col-12 col-sm-5">
-                  <label for="r-type" class="form-label report-label fw-bold">
-                    <i class="bi bi-tag-fill me-1"></i> نوع الرسالة *
-                  </label>
-                  <select id="r-type" class="form-select report-input" required>
+                  <label for="r-type" class="report-label"
+                    ><i class="bi bi-tag-fill me-1"></i>نوع الرسالة *</label
+                  >
+                  <select
+                    id="r-type"
+                    class="report-input"
+                    required
+                    style="cursor: pointer"
+                  >
                     <option value="" disabled selected>اختر...</option>
                     <option value="error_report">إبلاغ عن خطأ</option>
                     <option value="suggestion">اقتراح</option>
@@ -665,121 +654,117 @@
                   <div class="report-field-error" id="err-type"></div>
                 </div>
                 <div class="col-12 col-sm-7">
-                  <label
-                    for="r-subject"
-                    class="form-label report-label fw-bold"
+                  <label for="r-subject" class="report-label"
+                    ><i class="bi bi-card-heading me-1"></i>عنوان الموضوع
+                    *</label
                   >
-                    <i class="bi bi-card-heading me-1"></i> عنوان الموضوع *
-                  </label>
                   <input
                     type="text"
                     id="r-subject"
-                    class="form-control report-input"
+                    class="report-input"
                     placeholder="ملخص قصير"
                     required
                   />
                   <div class="report-field-error" id="err-subject"></div>
                 </div>
               </div>
-
-              <!-- Riwaya -->
               <div class="mb-3">
-                <label for="r-riwaya" class="form-label report-label fw-bold">
-                  <i class="bi bi-mic-fill me-1"></i> الرواية *
-                </label>
-                <select id="r-riwaya" class="form-select report-input" required>
+                <label for="r-riwaya" class="report-label"
+                  ><i class="bi bi-mic-fill me-1"></i>الرواية *</label
+                >
+                <select
+                  id="r-riwaya"
+                  class="report-input"
+                  required
+                  style="cursor: pointer"
+                >
                   <option value="" disabled selected>اختر الرواية...</option>
                   <option value="warsh">ورش عن نافع</option>
                   <option value="hafs">حفص عن عاصم</option>
                 </select>
                 <div class="report-field-error" id="err-riwaya"></div>
               </div>
-
-              <!-- Sura AR -->
               <div class="mb-3">
-                <label for="r-sura-ar" class="form-label report-label fw-bold">
-                  <i class="bi bi-book-fill me-1"></i> السورة *
-                </label>
+                <label for="r-sura-ar" class="report-label"
+                  ><i class="bi bi-book-fill me-1"></i>السورة *</label
+                >
                 <select
                   id="r-sura-ar"
-                  class="form-select report-input"
+                  class="report-input"
                   required
+                  style="cursor: pointer"
                 >
                   <option value="" disabled selected>اختر السورة...</option>
                 </select>
                 <div class="report-field-error" id="err-sura-ar"></div>
               </div>
-
-              <!-- Page + Aya row -->
               <div class="row g-3 mb-3">
                 <div class="col-6">
-                  <label for="r-page" class="form-label report-label fw-bold">
-                    <i class="bi bi-file-text-fill me-1"></i> الصفحة *
-                  </label>
-                  <select id="r-page" class="form-select report-input" required>
+                  <label for="r-page" class="report-label"
+                    ><i class="bi bi-file-text-fill me-1"></i>الصفحة *</label
+                  >
+                  <select
+                    id="r-page"
+                    class="report-input"
+                    required
+                    style="cursor: pointer"
+                  >
                     <option value="" disabled selected>—</option>
                   </select>
                   <div class="report-field-error" id="err-page"></div>
                 </div>
                 <div class="col-6">
-                  <label for="r-aya" class="form-label report-label fw-bold">
-                    <i class="bi bi-hash me-1"></i> الآية *
-                  </label>
-                  <select id="r-aya" class="form-select report-input" required>
+                  <label for="r-aya" class="report-label"
+                    ><i class="bi bi-hash me-1"></i>الآية *</label
+                  >
+                  <select
+                    id="r-aya"
+                    class="report-input"
+                    required
+                    style="cursor: pointer"
+                  >
                     <option value="" disabled selected>—</option>
                   </select>
                   <div class="report-field-error" id="err-aya"></div>
                 </div>
               </div>
-
-              <!-- Details -->
               <div class="mb-3">
-                <label for="r-details" class="form-label report-label fw-bold">
-                  <i class="bi bi-chat-text-fill me-1"></i> تفاصيل الرسالة *
-                </label>
+                <label for="r-details" class="report-label"
+                  ><i class="bi bi-chat-text-fill me-1"></i>تفاصيل الرسالة
+                  *</label
+                >
                 <textarea
                   id="r-details"
-                  class="form-control report-input"
+                  class="report-input"
                   rows="4"
                   placeholder="صِف الخطأ أو الاقتراح بالتفصيل..."
                   required
                 ></textarea>
                 <div class="report-field-error" id="err-details"></div>
               </div>
-
-              <!-- Attachments -->
               <div class="mb-4">
-                <label for="r-upload" class="form-label report-label fw-bold">
-                  <i class="bi bi-paperclip me-1"></i> مرفقات (اختياري)
-                </label>
+                <label for="r-upload" class="report-label"
+                  ><i class="bi bi-paperclip me-1"></i>مرفقات (اختياري)</label
+                >
                 <input
                   type="file"
                   id="r-upload"
-                  class="form-control report-input"
+                  class="report-input"
                   accept="image/*,application/pdf"
                   multiple
                 />
-                <small class="report-hint mt-1 d-block">
-                  يمكنك إرفاق صور أو ملفات PDF. اضغط Ctrl/Cmd لاختيار أكثر من
-                  ملف.
-                </small>
+                <small class="report-hint"
+                  >يمكنك إرفاق صور أو ملفات PDF. اضغط Ctrl/Cmd لاختيار أكثر من
+                  ملف.</small
+                >
               </div>
-
-              <!-- Status message -->
               <div
                 id="r-status"
                 class="report-status mb-3"
                 style="display: none"
               ></div>
-
-              <!-- Submit -->
-              <button
-                type="submit"
-                id="r-submit-btn"
-                class="btn report-submit-btn fw-bold w-100 py-2 fs-5"
-              >
-                <i class="bi bi-send-fill me-2"></i>
-                إرسال التقرير
+              <button type="submit" id="r-submit-btn" class="report-submit-btn">
+                <i class="bi bi-send-fill"></i> إرسال التقرير
               </button>
             </form>
           </div>
@@ -787,50 +772,75 @@
       </div>
     </div>
 
-    <!-- Floating Menu Button -->
-    <button
-      class="fab-menu-btn"
-      type="button"
-      data-bs-toggle="offcanvas"
-      data-bs-target="#offcanvasSidebar"
-      aria-controls="offcanvasSidebar"
-      title="القائمة"
-    >
-      <i class="bi bi-list"></i>
-    </button>
+    <!-- ── Speed-dial FAB ── -->
+    <div class="fab-speed-dial" id="fab-speed-dial">
+      <!-- Child actions (above trigger) -->
+      <div class="fab-actions" id="fab-actions">
+        <!-- About -->
+        <button class="fab-action-btn" id="fab-about-btn" title="عن التطبيق">
+          <i class="bi bi-question-lg"></i>
+        </button>
+        <!-- Theme toggle -->
+        <button
+          class="fab-action-btn"
+          onclick="
+            toggleTheme();
+            closeFab();
+          "
+          id="fab-theme-btn"
+          title="تبديل المظهر"
+        >
+          <i class="bi bi-moon-stars-fill" id="fab-theme-icon"></i>
+        </button>
+        <!-- Fullscreen enter -->
+        <button
+          class="fab-action-btn fab-fs-enter"
+          onclick="
+            toggleFullscreen();
+            closeFab();
+          "
+          title="ملء الشاشة"
+        >
+          <i class="bi bi-fullscreen"></i>
+        </button>
+        <!-- Fullscreen exit -->
+        <button
+          class="fab-action-btn fab-fs-exit"
+          onclick="
+            toggleFullscreen();
+            closeFab();
+          "
+          title="إنهاء ملء الشاشة"
+        >
+          <i class="bi bi-fullscreen-exit"></i>
+        </button>
+        <!-- Sidebar / Menu -->
+        <button
+          class="fab-action-btn"
+          id="fab-sidebar-btn"
+          title="القائمة"
+          aria-label="القائمة"
+        >
+          <i class="bi bi-list"></i>
+        </button>
+      </div>
 
-    <!-- Floating Fullscreen Enter Button -->
-    <button
-      class="fab-fullscreen-btn fab-fullscreen-enter"
-      onclick="toggleFullscreen()"
-      title="ملء الشاشة"
-    >
-      <i class="bi bi-fullscreen"></i>
-    </button>
+      <!-- Trigger -->
+      <button
+        class="fab-trigger"
+        id="fab-trigger"
+        onclick="toggleFab()"
+        title="القائمة السريعة"
+        aria-label="القائمة السريعة"
+        aria-expanded="false"
+      >
+        <i class="bi bi-plus-lg fab-trigger-icon"></i>
+      </button>
+    </div>
+    <!-- Backdrop closes FAB on outside tap -->
+    <div class="fab-backdrop" id="fab-backdrop" onclick="closeFab()"></div>
 
-    <!-- Floating Fullscreen Exit Button -->
-    <button
-      class="fab-fullscreen-btn fab-fullscreen-exit"
-      onclick="toggleFullscreen()"
-      title="إنهاء ملء الشاشة"
-    >
-      <i class="bi bi-fullscreen-exit"></i>
-    </button>
-
-    <!-- Floating About Button -->
-    <button
-      class="fab-about-btn"
-      data-bs-toggle="modal"
-      data-bs-target="#aboutModal"
-      title="عن التطبيق"
-    >
-      <i class="bi bi-question-lg"></i>
-    </button>
-
-    <!-- Bootstrap JS Bundle -->
-    <script src="assets/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Custom Script -->
+    <!-- Custom Scripts -->
     <!-- <script src="assets/js/script.min.js"></script> -->
     <!-- <script src="assets/js/report.min.js"></script> -->
     <script src="assets/js/script.js"></script>
