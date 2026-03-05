@@ -4,92 +4,181 @@ const SURAH_NO_BASMALA = 9; // Surah At-Tawbah has no Basmala
 const WARSH_MODAL_KEY = 'warshModalSeen';
 const WARSH_TIMER_MS = 5000;
 
+// mp3quran API base
+const MP3QURAN_API = 'https://www.mp3quran.net/api/v3';
+
+// ─── TEMPORARY DEBUG HELPER ───────────────────────────────────────────────────
+// To disable: set DEBUG = false   |   To remove entirely: delete this whole
+// block (lines between the two ─── markers) AND the 4 CONSOLE_LOG.xxx() call
+// sites inside fetchReciters, fetchTimingReads, fetchSurahTiming, and
+// _playQueueItemAtIndex.  Nothing else depends on this object.
+const DEBUG = true;
+
+const CONSOLE_LOG = (() => {
+  const noop = () => {};
+  if (!DEBUG)
+    return {
+      reciters: noop,
+      timingReads: noop,
+      surahTiming: noop,
+      playingAyah: noop,
+    };
+
+  const ms = (t) => `${(t / 1000).toFixed(2)}s`;
+
+  return {
+    /** After reciters are fetched — shows id, name, server URL, moshaf_type, surah count */
+    reciters(riwayaKey, cfg, reciters) {
+      console.group(
+        `%c[API] Reciters  riwaya="${riwayaKey}" (rewayaId=${cfg.rewayaId})  →  ${reciters.length} reciter(s)`,
+        'color:#1565c0;font-weight:bold',
+      );
+      reciters.forEach((r) => {
+        const m = r.moshaf?.[0] ?? {};
+        console.log(
+          `  #${String(r.id).padEnd(4)} ${r.name}\n` +
+            `         server      : ${m.server ?? '—'}\n` +
+            `         moshaf_type : ${m.moshaf_type ?? '—'}\n` +
+            `         surahs      : ${m.surah_total ?? '—'} / 114`,
+        );
+      });
+      console.groupEnd();
+    },
+
+    /** After timing-reads are fetched — shows which reciters support ayah-by-ayah timing */
+    timingReads(reads) {
+      console.group(
+        `%c[API] Timing reads  →  ${reads.length} reciter(s) with ayah timing`,
+        'color:#6a1b9a;font-weight:bold',
+      );
+      reads.forEach((r) => {
+        console.log(
+          `  #${String(r.id).padEnd(4)} ${r.name}\n` +
+            `         rewaya      : ${r.rewaya}\n` +
+            `         folder_url  : ${r.folder_url}\n` +
+            `         surahs      : ${r.soar_count}`,
+        );
+      });
+      console.groupEnd();
+    },
+
+    /** After surah timing is fetched — shows first 5 ayah windows */
+    surahTiming(readId, suraNo, timing) {
+      if (!timing || timing.length === 0) {
+        console.warn(
+          `%c[API] Timing  read=#${readId}  surah=${suraNo}  →  NO DATA`,
+          'color:#b71c1c',
+        );
+        return;
+      }
+      console.group(
+        `%c[API] Timing  read=#${readId}  surah=${suraNo}  →  ${timing.length} ayah(s)`,
+        'color:#2e7d32;font-weight:bold',
+      );
+      const preview = timing.slice(0, 5);
+      preview.forEach((t) =>
+        console.log(
+          `  ayah ${String(t.ayah).padStart(3)}  :  ${ms(t.start_time)}  →  ${ms(t.end_time)}  (${ms(t.end_time - t.start_time)})`,
+        ),
+      );
+      if (timing.length > 5)
+        console.log(`  … and ${timing.length - 5} more ayahs`);
+      console.groupEnd();
+    },
+
+    /** When an ayah starts playing — shows reciter, surah URL, seek window */
+    playingAyah(reciter, riwayaKey, ayah, surahUrl, ayahTiming) {
+      const hasTiming = !!ayahTiming;
+      console.group(
+        `%c[PLAY]  ${riwayaKey}  |  Surah ${ayah.sura_no} : Ayah ${ayah.aya_no}  |  ${reciter?.name ?? '?'}`,
+        `color:${hasTiming ? '#004d40' : '#e65100'};font-weight:bold`,
+      );
+      console.log(`  reciter id  : ${reciter?.id ?? '—'}`);
+      console.log(`  riwaya      : ${riwayaKey}`);
+      console.log(`  surah URL   : ${surahUrl}`);
+      if (hasTiming) {
+        console.log(
+          `  seek        : ${ms(ayahTiming.start_time)}  →  ${ms(ayahTiming.end_time)}` +
+            `  (duration: ${ms(ayahTiming.end_time - ayahTiming.start_time)})`,
+        );
+      } else {
+        console.log(
+          '  timing      : ✗ — playing full surah (no ayah-level timing)',
+        );
+      }
+      console.groupEnd();
+    },
+  };
+})();
+// ─── END TEMPORARY DEBUG HELPER ───────────────────────────────────────────────
+
 /**
  * Riwaya configuration.
- * Each entry defines:
- *   - textFile   : path to the JSON data file for that riwaya's text
- *   - audioDir   : subfolder inside assets/audio/ for offline files
- *   - audioUrls  : array of fallback URL JSON file paths (online streaming)
- *   - font       : CSS font-family name to apply when this riwaya is active
- *   - reciters   : map of reciter value → Arabic display name
+ * rewayaId    : the id used in mp3quran API ?rewaya= query parameter
+ * moshafType  : the moshaf_type value inside each reciter's moshaf array
+ *               (different from rewayaId — confirmed from live API responses)
+ * font        : CSS font-family name to apply when this riwaya is active
+ *
+ * Confirmed moshaf_type values from API:
+ *   Warsh A'n Nafi' Murattal  → 21
+ *   Hafs A'n Assem  Murattal  → 116  (most common), also 11
  */
 const RIWAYA_CONFIG = {
   warsh: {
     textFile: 'assets/text/warsh-quran.min.json',
-    audioDir: 'warsh',
-    audioUrls: [
-      'assets/audio/json/quran_audio_urls-1_warsh.min.json',
-      'assets/audio/json/quran_audio_urls-2_warsh.min.json',
-      'assets/audio/json/quran_audio_urls-3_warsh.min.json',
-      'assets/audio/json/quran_audio_urls-4_warsh.min.json',
-      'assets/audio/json/quran_audio_urls-5_warsh.min.json',
-    ],
+    rewayaId: 2, // used in ?rewaya=2
+    moshafType: 21, // moshaf_type in API response
     font: 'UthmanicWarsh',
-    reciters: {
-      'mahmoud_khalil_al-hussary': 'محمود خليل الحصري',
-      yassen_al_jazairi: 'ياسين الجزائري',
-    },
   },
   hafs: {
     textFile: 'assets/text/hafs-quran.min.json',
-    audioDir: 'hafs',
-    audioUrls: [
-      'assets/audio/json/quran_audio_urls-1_hafs.min.json',
-      'assets/audio/json/quran_audio_urls-2_hafs.min.json',
-      'assets/audio/json/quran_audio_urls-3_hafs.min.json',
-      'assets/audio/json/quran_audio_urls-4_hafs.min.json',
-    ],
+    rewayaId: 1, // used in ?rewaya=1
+    moshafType: 116, // moshaf_type in API response (most common for Hafs)
     font: 'UthmanicHafs',
-    reciters: {
-      'muhammad_siddiq_al-minshawi': 'محمد صديق المنشاوي',
-      abdelbasset_abdessamad: 'عبد الباسط عبد الصمد',
-    },
   },
 };
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const state = {
   quranData: [],
-  audioUrlsSources: [],
-  localAudioCache: {},
-  useLocalAudio: true,
+  reciters: [], // fetched from mp3quran API
+  timingReads: [], // fetched from /ayat_timing/reads — reciters that have timing
+  timingCache: {}, // cache: key = `{moshafId}_{suraNo}` → array of ayah timing objects
   currentPage: 1,
   currentSura: 1,
   currentJuz: 1,
   currentAyah: null,
   currentRiwaya: 'warsh',
-  selectedReciter: '',
+  selectedReciter: null, // full reciter object { id, name, moshaf: [{server,...}] }
   audioPlayer: null,
-  playQueue: [],
+  playQueue: [], // array of ayah data objects
   currentPlayIndex: 0,
   repeatCount: 1,
   currentRepeatCount: 0,
   currentPlayModeRepeatCount: 0,
   isPlaying: false,
   isSwitchingRiwaya: false,
+  // Timing-based playback state
+  currentSurahTiming: [], // timing array for the currently loaded surah
+  currentAyahEndTime: null, // end_time (ms) for the ayah currently playing
+  timingWatcherId: null, // setInterval id for timeupdate polling
+  _noTimingToastKey: null, // `${reciterId}_${suraNo}` — fires once per reciter+surah
 };
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
-/** Safe getElementById shorthand */
 function getEl(id) {
   return document.getElementById(id);
 }
 
-/** Save a key-value pair to localStorage */
 function saveSetting(key, value) {
   localStorage.setItem(key, value);
 }
 
-/** Apply font size to the Quran text container */
 function applyFontSize(size) {
   getEl('quran-text').style.fontSize = size + 'px';
 }
 
-/**
- * Filter quranData for ayahs that appear on a given page number.
- * Centralises the repeated page-split/filter pattern.
- */
 function getAyahsOnPage(pageNum) {
   return state.quranData.filter((item) => {
     const pages = item.page.split('-');
@@ -97,25 +186,16 @@ function getAyahsOnPage(pageNum) {
   });
 }
 
-/**
- * Remove the active highlight from all ayah elements, then optionally
- * highlight and scroll to a specific element.
- */
 function setActiveAyahElement(element) {
   document
     .querySelectorAll('.ayah.active')
     .forEach((el) => el.classList.remove('active'));
-
   if (element) {
     element.classList.add('active');
     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 }
 
-/**
- * Find the rendered DOM element for a given sura/ayah pair and activate it.
- * Returns the element if found, null otherwise.
- */
 function activateAyahInDOM(suraNo, ayahNo) {
   const el = document.querySelector(
     `[data-sura="${suraNo}"][data-ayah="${ayahNo}"]`,
@@ -124,95 +204,159 @@ function activateAyahInDOM(suraNo, ayahNo) {
   return el;
 }
 
-/** Convert Western digits to Arabic-Indic numerals  */
-function toArabicIndic(n) {
-  return String(n).replace(/\d/g, (d) =>
-    String.fromCharCode(0x0660 + parseInt(d)),
+/**
+ * Build the streaming audio URL for a given ayah using the mp3quran reciter server.
+ * mp3quran audio files follow the pattern: {server}/{surah_3digit}{ayah_3digit}.mp3
+ */
+/**
+ * Build the surah MP3 URL for a given surah number.
+ * mp3quran stores one file per surah: {server}{surah_3digit}.mp3
+ * e.g. https://server11.mp3quran.net/qari/001.mp3
+ *      https://server13.mp3quran.net/husr/Rewayat-Warsh-A-n-Nafi/018.mp3
+ */
+function buildSurahAudioUrl(suraNo) {
+  if (!state.selectedReciter) return null;
+  const cfg = RIWAYA_CONFIG[state.currentRiwaya];
+  const moshaf =
+    state.selectedReciter.moshaf.find(
+      (m) => m.moshaf_type === cfg.moshafType,
+    ) || state.selectedReciter.moshaf[0];
+  if (!moshaf) return null;
+  const server = moshaf.server.endsWith('/')
+    ? moshaf.server
+    : moshaf.server + '/';
+  return `${server}${String(suraNo).padStart(3, '0')}.mp3`;
+}
+
+/**
+ * Return the moshaf object for the currently selected reciter + riwaya.
+ */
+function getSelectedMoshaf() {
+  if (!state.selectedReciter) return null;
+  const cfg = RIWAYA_CONFIG[state.currentRiwaya];
+  return (
+    state.selectedReciter.moshaf.find(
+      (m) => m.moshaf_type === cfg.moshafType,
+    ) || state.selectedReciter.moshaf[0]
   );
 }
 
 /**
- * Build the end-of-ayah marker:
- *  - warsh: Arabic-Indic digits only
- *  - hafs:  use the pre-built aya_no_marker from the data
+ * Check whether the selected reciter has a given surah available.
  */
-function ayahMarker(ayah) {
-  if (state.currentRiwaya === 'warsh') {
-    return toArabicIndic(ayah.aya_no);
-  }
-  return ayah.aya_no_marker || '';
-}
-
-/**
- * Return aya_text with the old 0xFC00-range glyph stripped (warsh only),
- */
-function ayahText(ayah) {
-  if (state.currentRiwaya === 'warsh') {
-    return ayah.aya_text.replace(/[\uFC00-\uFDFF]/g, '').trimEnd();
-  }
-  return ayah.aya_text;
-}
-
-/** Build the audio file path for a given reciter and ayah */
-function buildAudioPath(reciter, suraNo, ayahNo) {
+function reciterHasSurah(reciter, suraNo) {
+  if (!reciter) return false;
   const cfg = RIWAYA_CONFIG[state.currentRiwaya];
-  const audioDir = cfg ? cfg.audioDir : state.currentRiwaya;
-  return `assets/audio/${audioDir}/${reciter}/${String(suraNo).padStart(3, '0')}/${String(ayahNo).padStart(3, '0')}.mp3`;
+  const moshaf =
+    reciter.moshaf.find((m) => m.moshaf_type === cfg.moshafType) ||
+    reciter.moshaf[0];
+  if (!moshaf?.surah_list) return true;
+  return moshaf.surah_list.split(',').map(Number).includes(suraNo);
 }
 
-/**
- * Look up a fallback online URL from the loaded JSON sources for a given reciter/sura/ayah.
- * Randomly selects from available sources each call to distribute bandwidth
- * across all hosted accounts and avoid hitting any single Cloudinary quota.
- */
-function getFallbackAudioUrl(reciter, suraNo, ayahNo) {
-  const sources = state.audioUrlsSources;
-  if (!sources || sources.length === 0) return null;
-
-  const suraKey = String(suraNo).padStart(3, '0');
-  const ayahKey = String(ayahNo).padStart(3, '0');
-
-  // Shuffle source indices so load is distributed randomly across accounts
-  const order = [...sources.keys()].sort(() => Math.random() - 0.5);
-
-  for (const idx of order) {
-    const source = sources[idx];
-    const reciters = source?.reciters;
-    if (!reciters) continue;
-    const reciterData = reciters[reciter];
-    if (!reciterData) continue;
-    const ayahs = reciterData[suraKey];
-    if (!ayahs) continue;
-    const found = ayahs.find((a) => a.ayah === ayahKey);
-    if (found?.url) return found.url;
-  }
-
-  return null;
-}
+// ─── Ayat Timing API ──────────────────────────────────────────────────────────
 
 /**
- * Check once (per reciter+surah) whether local audio files exist.
- * Uses a HEAD request on ayah 001 of the surah as a proxy for the whole surah.
- * Result is cached so subsequent calls are instant.
+ * Fetch the list of reads (reciters) that have ayat timing available.
+ * Cached in state.timingReads after first fetch.
  */
-async function checkLocalAudioAvailable(reciter, suraNo) {
-  const cacheKey = `${reciter}/${suraNo}`;
-  if (cacheKey in state.localAudioCache) {
-    return state.localAudioCache[cacheKey];
-  }
-  const testPath = buildAudioPath(reciter, suraNo, 1);
+async function fetchTimingReads() {
+  if (state.timingReads.length > 0) return state.timingReads;
   try {
-    const res = await fetch(testPath, { method: 'HEAD' });
-    const contentType = res.headers.get('Content-Type') || '';
-    const isAudio = res.ok && contentType.includes('audio');
-    state.localAudioCache[cacheKey] = isAudio;
-  } catch {
-    state.localAudioCache[cacheKey] = false;
+    const res = await fetch(`${MP3QURAN_API}/ayat_timing/reads`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    state.timingReads = Array.isArray(data) ? data : [];
+    CONSOLE_LOG.timingReads(state.timingReads); // DEBUG — remove with CONSOLE_LOG block
+  } catch (err) {
+    console.warn('Could not fetch timing reads:', err);
+    state.timingReads = [];
   }
-  return state.localAudioCache[cacheKey];
+  return state.timingReads;
 }
 
-function showToast(message) {
+/**
+ * Find the timing read that matches the selected reciter's moshaf server URL.
+ * The timing API uses its own `id` (read id) which we match via folder_url.
+ * Returns the matching timing read object or null if not found.
+ */
+function findTimingRead() {
+  const moshaf = getSelectedMoshaf();
+  if (!moshaf || state.timingReads.length === 0) return null;
+
+  // Normalize both URLs for comparison (strip trailing slash, lowercase)
+  const normalize = (url) => url.replace(/\/$/, '').toLowerCase();
+  const moshafServer = normalize(moshaf.server);
+
+  return (
+    state.timingReads.find((r) => normalize(r.folder_url) === moshafServer) ||
+    null
+  );
+}
+
+/**
+ * Check whether a given reciter has ayat timing available.
+ * Matches the reciter's moshaf server URL against the timing reads list.
+ */
+function reciterHasTiming(reciter) {
+  if (!reciter || state.timingReads.length === 0) return false;
+  const cfg = RIWAYA_CONFIG[state.currentRiwaya];
+  const moshaf =
+    reciter.moshaf.find((m) => m.moshaf_type === cfg.moshafType) ||
+    reciter.moshaf[0];
+  if (!moshaf) return false;
+  const normalize = (url) => url.replace(/\/$/, '').toLowerCase();
+  const moshafServer = normalize(moshaf.server);
+  return state.timingReads.some(
+    (r) => normalize(r.folder_url) === moshafServer,
+  );
+}
+
+/**
+ * Fetch and cache ayat timing for a given read id + surah number.
+ * Returns array of { ayah, start_time, end_time } objects, or null on failure.
+ * Times are in milliseconds.
+ */
+async function fetchSurahTiming(readId, suraNo) {
+  const cacheKey = `${readId}_${suraNo}`;
+  if (state.timingCache[cacheKey]) return state.timingCache[cacheKey];
+
+  try {
+    const res = await fetch(
+      `${MP3QURAN_API}/ayat_timing?surah=${suraNo}&read=${readId}`,
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    // Filter out ayah=0 (pre-surah silence entry) and store
+    const timing = Array.isArray(data) ? data.filter((t) => t.ayah > 0) : [];
+    // Pull the first ayah's start time 0s for better sync
+    if (timing.length > 0) {
+      timing[0] = {
+        ...timing[0],
+        // start_time: Math.max(0, timing[0].start_time - 1000),
+        start_time: 0,
+      };
+    }
+    state.timingCache[cacheKey] = timing;
+    CONSOLE_LOG.surahTiming(readId, suraNo, timing); // DEBUG — remove with CONSOLE_LOG block
+    return timing;
+  } catch (err) {
+    console.warn(
+      `Could not fetch timing for read=${readId} surah=${suraNo}:`,
+      err,
+    );
+    return null;
+  }
+}
+
+/**
+ * Get the timing entry for a specific ayah from a timing array.
+ */
+function getAyahTiming(timingArray, ayahNo) {
+  return timingArray.find((t) => t.ayah === ayahNo) || null;
+}
+
+function showToast(message, duration = 3000) {
   let container = document.getElementById('toast-container');
   if (!container) {
     container = document.createElement('div');
@@ -237,20 +381,50 @@ function showToast(message) {
   setTimeout(() => {
     toast.style.opacity = '0';
     setTimeout(() => toast.remove(), 350);
-  }, 3000);
+  }, duration);
+}
+
+// ─── mp3quran API ─────────────────────────────────────────────────────────────
+
+/**
+ * Fetch reciters from mp3quran API for the current riwaya.
+ * Returns array of reciter objects with their moshaf (includes server URL).
+ */
+async function fetchReciters(riwaya = state.currentRiwaya) {
+  const cfg = RIWAYA_CONFIG[riwaya];
+  if (!cfg) return [];
+  try {
+    const url = `${MP3QURAN_API}/reciters?language=ar&rewaya=${cfg.rewayaId}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const reciters = data.reciters || [];
+    CONSOLE_LOG.reciters(riwaya, cfg, reciters); // DEBUG — remove with CONSOLE_LOG block
+    return reciters;
+  } catch (err) {
+    console.error('Failed to fetch reciters from mp3quran:', err);
+    showToast('تعذّر تحميل أسماء القراء');
+    return [];
+  }
 }
 
 // ─── Initialisation ───────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Load riwaya preference before fetching any data
   const savedRiwaya = localStorage.getItem('riwaya') || 'warsh';
   state.currentRiwaya = savedRiwaya;
   const riwayaSelect = getEl('riwaya-select');
   if (riwayaSelect) riwayaSelect.value = savedRiwaya;
 
   await loadQuranData();
-  await loadAudioUrlsData();
+
+  // Fetch reciters and timing reads in parallel
+  showToast('جارٍ تحميل أسماء القراء...');
+  [state.reciters, state.timingReads] = await Promise.all([
+    fetchReciters(savedRiwaya),
+    fetchTimingReads(),
+  ]);
+
   initializeSelectors();
   initializeAudioPlayer();
   loadSettings();
@@ -285,17 +459,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-/** Restore the previously selected ayah after the page has been rendered */
 function restoreSavedAyah(suraNo, ayahNo) {
   const ayahData = state.quranData.find(
     (item) => item.sura_no === suraNo && item.aya_no === ayahNo,
   );
-
   if (!ayahData) return;
-
   state.currentAyah = ayahData;
   state.currentSura = suraNo;
-
   getEl('surah-select').value = suraNo;
   populateAyahSelector(suraNo);
   getEl('ayah-select').value = ayahNo;
@@ -304,9 +474,7 @@ function restoreSavedAyah(suraNo, ayahNo) {
   updateNavButtonStates();
 }
 
-/** Load persisted user settings from localStorage */
 function loadSettings() {
-  // Reciter is populated separately in populateReciterOptions()
   const savedSpeed = localStorage.getItem('speed') || '1';
   getEl('speed-control').value = savedSpeed;
 
@@ -319,6 +487,7 @@ function loadSettings() {
   const savedFontSize = localStorage.getItem('fontSize') || '28';
   getEl('font-size-control').value = savedFontSize;
   applyFontSize(savedFontSize);
+
   setTimeout(() => {
     showWarshModal();
   }, 2000);
@@ -329,126 +498,105 @@ function loadSettings() {
 async function loadQuranData() {
   try {
     const cfg = RIWAYA_CONFIG[state.currentRiwaya];
-    const textFile = cfg
-      ? cfg.textFile
-      : 'assets/text/UthmanicWarsh/warshData_v2-1.json';
+    const textFile = cfg ? cfg.textFile : 'assets/text/warsh-quran.min.json';
     const response = await fetch(textFile);
     const raw = await response.json();
-    state.quranData = raw.map((item) => ({
-      ...item,
-      page: String(item.page),
-    }));
+    state.quranData = raw.map((item) => ({ ...item, page: String(item.page) }));
   } catch (error) {
     console.error('Error loading Quran data:', error);
     showToast('خطأ في تحميل بيانات القرآن الكريم');
   }
 }
 
-async function loadAudioUrlsData() {
-  const files = RIWAYA_CONFIG[state.currentRiwaya].audioUrls;
-
-  const results = await Promise.allSettled(
-    files.map((f) => fetch(f).then((r) => r.json())),
-  );
-
-  state.audioUrlsSources = results
-    .filter((r) => r.status === 'fulfilled')
-    .map((r) => r.value);
-
-  if (state.audioUrlsSources.length === 0) {
-    console.warn('Could not load any audio URLs fallback data.');
-  } else {
-    console.log(
-      `Loaded ${state.audioUrlsSources.length} audio URL source(s) for load balancing.`,
-    );
-  }
-}
-
-/** Cycle through available riwayas when the badge is clicked */
 function cycleRiwaya() {
   const riwayas = Object.keys(RIWAYA_CONFIG);
   const currentIdx = riwayas.indexOf(state.currentRiwaya);
   const nextRiwaya = riwayas[(currentIdx + 1) % riwayas.length];
-
-  // Sync the sidebar select then trigger the switch
   const riwayaSelect = getEl('riwaya-select');
   if (riwayaSelect) riwayaSelect.value = nextRiwaya;
   switchRiwaya(nextRiwaya);
 }
 
-/** Apply the Quran text font for the currently-active riwaya */
 function applyRiwayaFont() {
   const cfg = RIWAYA_CONFIG[state.currentRiwaya];
   if (!cfg) return;
   const quranTextEl = getEl('quran-text');
   if (quranTextEl) quranTextEl.style.fontFamily = `'${cfg.font}', serif`;
-
-  // Update header badge
   const badge = getEl('riwaya-badge');
-  if (badge) {
-    badge.textContent = state.currentRiwaya === 'hafs' ? 'حفص' : 'ورش';
-  }
+  if (badge) badge.textContent = state.currentRiwaya === 'hafs' ? 'حفص' : 'ورش';
 }
 
-/** Populate the reciter <select> with options valid for the current riwaya */
+/**
+ * Populate the reciter <select> from the API-fetched reciters list.
+ * Each option value is the reciter's numeric id.
+ */
 function populateReciterOptions() {
   const reciterSelect = getEl('reciter-select');
   if (!reciterSelect) return;
 
   reciterSelect.innerHTML = '<option value="">اختر القارئ</option>';
 
-  const cfg = RIWAYA_CONFIG[state.currentRiwaya];
-  if (!cfg) return;
+  const isWarsh = state.currentRiwaya === 'warsh';
 
-  Object.entries(cfg.reciters).forEach(([value, label]) => {
-    const opt = document.createElement('option');
-    opt.value = value;
-    opt.textContent = label;
-    reciterSelect.appendChild(opt);
-  });
+  state.reciters
+    .filter((reciter) => reciterHasTiming(reciter))
+    .filter((reciter) => !(isWarsh && reciter.id === 134))
+    .forEach((reciter) => {
+      const opt = document.createElement('option');
+      opt.value = reciter.id;
+      opt.textContent = reciter.name;
+      reciterSelect.appendChild(opt);
+    });
 
-  // Restore saved reciter if it is valid for this riwaya, else pick first
-  const saved = localStorage.getItem('reciter') || '';
-  reciterSelect.value = cfg.reciters[saved]
-    ? saved
-    : Object.keys(cfg.reciters)[0];
-  state.selectedReciter = reciterSelect.value;
+  // Restore saved reciter id (only if they have timing)
+  const savedId = localStorage.getItem('reciter') || '';
+  const timedReciters = state.reciters
+    .filter((r) => reciterHasTiming(r))
+    .filter((r) => !(isWarsh && r.id === 134));
+  const savedExists = timedReciters.find((r) => String(r.id) === savedId);
+  const defaultId = savedExists
+    ? savedId
+    : timedReciters.length > 0
+      ? String(timedReciters[0].id)
+      : '';
+
+  reciterSelect.value = defaultId;
+  state.selectedReciter =
+    state.reciters.find((r) => String(r.id) === defaultId) || null;
 }
 
 /**
- * Switch riwaya: stop audio, reload text data and audio URLs,
- * re-render the current page, and update UI.
+ * Switch riwaya: stop audio, reload text + reciters, re-render.
  */
 async function switchRiwaya(newRiwaya) {
   if (newRiwaya === state.currentRiwaya) return;
-
-  // Remember which surah the user was on
   const preservedSura = state.currentSura || 1;
 
   stopAudio();
   state.currentRiwaya = newRiwaya;
   saveSetting('riwaya', newRiwaya);
-
-  // Clear caches that were built for the previous riwaya
-  state.localAudioCache = {};
-  state.audioUrlsSources = [];
+  state.reciters = [];
+  state.selectedReciter = null;
 
   showToast('تحويل الرواية...');
 
   await loadQuranData();
-  await loadAudioUrlsData();
+
+  // Fetch new riwaya's reciters and timing reads
+  [state.reciters, state.timingReads] = await Promise.all([
+    fetchReciters(newRiwaya),
+    fetchTimingReads(),
+  ]);
 
   applyRiwayaFont();
   populateReciterOptions();
 
-  // Re-build selectors with new data — flag suppresses spurious change events
   state.isSwitchingRiwaya = true;
   populateSurahSelector();
   populateJuzSelector();
   populatePageSelector();
   state.isSwitchingRiwaya = false;
 
-  // Reset state then navigate to the preserved surah
   state.currentPage = 1;
   state.currentSura = preservedSura;
   state.currentJuz = 1;
@@ -463,7 +611,6 @@ async function switchRiwaya(newRiwaya) {
     displayPage(targetPage, true);
     getEl('surah-select').value = preservedSura;
     saveSetting('currentSura', preservedSura);
-
     setTimeout(() => {
       state.currentAyah = firstAyah;
       populateAyahSelector(preservedSura);
@@ -476,9 +623,7 @@ async function switchRiwaya(newRiwaya) {
     displayPage(1, false);
   }
 
-  if (newRiwaya === 'warsh') {
-    showWarshModal();
-  }
+  if (newRiwaya === 'warsh') showWarshModal();
 }
 
 // ─── Selectors ────────────────────────────────────────────────────────────────
@@ -495,14 +640,12 @@ function populateSurahSelector() {
   const surahs = [
     ...new Map(state.quranData.map((item) => [item.sura_no, item])).values(),
   ];
-
   surahs.forEach((sura) => {
     const option = document.createElement('option');
     option.value = sura.sura_no;
     option.textContent = `${sura.sura_no}. ${sura.sura_name_ar}`;
     surahSelect.appendChild(option);
   });
-
   const savedSurah = localStorage.getItem('currentSura') || '1';
   surahSelect.value = savedSurah;
   state.currentSura = parseInt(savedSurah);
@@ -511,14 +654,12 @@ function populateSurahSelector() {
 function populateJuzSelector() {
   const juzSelect = getEl('juz-select');
   juzSelect.innerHTML = '';
-
   for (let i = 1; i <= 30; i++) {
     const option = document.createElement('option');
     option.value = i;
     option.textContent = `الجزء ${i}`;
     juzSelect.appendChild(option);
   }
-
   const savedJuz = localStorage.getItem('currentJuz') || '1';
   juzSelect.value = savedJuz;
 }
@@ -526,14 +667,12 @@ function populateJuzSelector() {
 function populatePageSelector() {
   const pageSelect = getEl('page-select');
   pageSelect.innerHTML = '';
-
   for (let i = 1; i <= TOTAL_PAGES; i++) {
     const option = document.createElement('option');
     option.value = i;
     option.textContent = `صفحة ${i}`;
     pageSelect.appendChild(option);
   }
-
   const savedPage = localStorage.getItem('currentPage') || '1';
   pageSelect.value = savedPage;
 }
@@ -541,7 +680,6 @@ function populatePageSelector() {
 function populateAyahSelector(suraNo) {
   const ayahSelect = getEl('ayah-select');
   ayahSelect.innerHTML = '<option value="">اختر الآية</option>';
-
   state.quranData
     .filter((item) => item.sura_no == suraNo)
     .forEach((ayah) => {
@@ -552,7 +690,6 @@ function populateAyahSelector(suraNo) {
     });
 }
 
-/** Sync sidebar dropdowns to match the current ayah */
 function updateSidebarSelectors() {
   if (state.currentAyah) {
     getEl('surah-select').value = state.currentAyah.sura_no;
@@ -572,20 +709,16 @@ function displayPage(pageNum, keepCurrentSura = false) {
   const quranTextDiv = getEl('quran-text');
   quranTextDiv.innerHTML = '';
 
-  // Track which surah headers we've already rendered
   const displayedSuraHeaders = new Set();
   let previousSuraNo = null;
 
-  // Pre-compute which surahs begin on this page (determines whether to show Basmala)
   const surahsStartingOnPage = new Set(
     pageData.filter((a) => a.aya_no === 1).map((a) => a.sura_no),
   );
 
-  pageData.forEach((ayah, index) => {
-    // Insert surah header + optional Basmala when we encounter a new surah
+  pageData.forEach((ayah) => {
     if (ayah.sura_no !== previousSuraNo) {
       previousSuraNo = ayah.sura_no;
-
       if (!displayedSuraHeaders.has(ayah.sura_no)) {
         displayedSuraHeaders.add(ayah.sura_no);
 
@@ -613,14 +746,13 @@ function displayPage(pageNum, keepCurrentSura = false) {
     ayahSpan.dataset.sura = ayah.sura_no;
     ayahSpan.dataset.ayah = ayah.aya_no;
     ayahSpan.dataset.id = ayah.id;
-    ayahSpan.textContent = ayahText(ayah) + ' ' + ayahMarker(ayah) + ' ';
+    ayahSpan.textContent = ayah.aya_text + ' ' + ayah.aya_no_marker || '' + ' ';
     ayahSpan.addEventListener('click', (e) =>
       handleAyahClickWithToggle(e, ayah),
     );
     quranTextDiv.appendChild(ayahSpan);
   });
 
-  // Update header with surah info
   const firstAyahOfCurrentSura = pageData.find(
     (a) => a.sura_no === state.currentSura,
   );
@@ -634,7 +766,6 @@ function displayPage(pageNum, keepCurrentSura = false) {
     saveSetting('currentSura', state.currentSura);
   }
 
-  // Always sync juz
   state.currentJuz = pageData[0].jozz;
   getEl('juz-select').value = state.currentJuz;
   saveSetting('currentJuz', state.currentJuz);
@@ -645,7 +776,6 @@ function displayPage(pageNum, keepCurrentSura = false) {
   getEl('next-page').disabled = state.currentPage === TOTAL_PAGES;
 }
 
-/** Update the page header with surah name and juz/page numbers */
 function updatePageInfo(pageData) {
   getEl('sura-title').textContent = pageData.sura_name_ar;
   getEl('page-info').textContent =
@@ -654,34 +784,24 @@ function updatePageInfo(pageData) {
 
 // ─── Ayah Selection ───────────────────────────────────────────────────────────
 
-/**
- * Set the current ayah, sync all UI selectors, persist to storage,
- * and optionally trigger playback.
- */
 function setCurrentAyah(ayahData, { play = false } = {}) {
   state.currentAyah = ayahData;
   state.currentSura = ayahData.sura_no;
-
   getEl('surah-select').value = ayahData.sura_no;
   getEl('ayah-select').value = ayahData.aya_no;
   updatePageInfo(ayahData);
-
   saveSetting('currentSura', ayahData.sura_no);
   saveSetting('currentAyah', ayahData.aya_no);
-
   activateAyahInDOM(ayahData.sura_no, ayahData.aya_no);
   updateNavButtonStates();
-
   if (play) playAudio();
 }
 
-/** Select an ayah and immediately start playback */
 function selectAndPlayAyah(ayahData) {
   if (state.isPlaying) stopAudio();
   setCurrentAyah(ayahData, { play: true });
 }
 
-/** Handle a click on a rendered ayah span — toggle play/pause or start new */
 function handleAyahClickWithToggle(e, ayah) {
   const isSameAyah =
     state.currentAyah &&
@@ -693,7 +813,6 @@ function handleAyahClickWithToggle(e, ayah) {
   } else {
     state.currentAyah = ayah;
     state.currentSura = ayah.sura_no;
-
     getEl('surah-select').value = ayah.sura_no;
     getEl('ayah-select').value = ayah.aya_no;
     updatePageInfo(ayah);
@@ -714,59 +833,301 @@ function handleAyahClickWithToggle(e, ayah) {
   }
 }
 
-/** Navigate to and highlight the first ayah of a surah without triggering playback */
-function selectFirstAyahOfSurah(suraNo) {
-  const firstAyah = state.quranData.find(
-    (item) => item.sura_no === suraNo && item.aya_no === 1,
-  );
+// ─── Audio ────────────────────────────────────────────────────────────────────
 
-  if (!firstAyah) return;
+// ─── Audio Engine (surah MP3 + ayat timing seek) ─────────────────────────────
 
-  state.currentAyah = firstAyah;
-  state.currentSura = suraNo;
-  getEl('ayah-select').value = 1;
-  updatePageInfo(firstAyah);
-  saveSetting('currentAyah', 1);
-
-  setTimeout(() => activateAyahInDOM(suraNo, 1), 100);
+/**
+ * Stop the timeupdate watcher interval.
+ */
+function stopTimingWatcher() {
+  if (state.timingWatcherId !== null) {
+    clearInterval(state.timingWatcherId);
+    state.timingWatcherId = null;
+  }
 }
 
-// ─── Audio ────────────────────────────────────────────────────────────────────
+/**
+ * Start a polling loop that checks every 50 ms whether the current ayah's
+ * end_time has been reached, then calls onAyahEnded().
+ * end_time from the API is in milliseconds.
+ */
+function startTimingWatcher() {
+  stopTimingWatcher();
+  state.timingWatcherId = setInterval(() => {
+    if (!state.audioPlayer || state.audioPlayer.paused) return;
+    if (state.currentAyahEndTime === null) return;
+    const currentMs = state.audioPlayer.currentTime * 1000;
+    if (currentMs >= state.currentAyahEndTime) {
+      onAyahEnded();
+    }
+  }, 50);
+}
+
+/**
+ * Called when the current ayah's end_time is reached (or the surah file ends).
+ * Handles repeat logic and advances the play queue.
+ */
+function onAyahEnded() {
+  stopTimingWatcher();
+  state.currentRepeatCount++;
+
+  const repeatControl = getEl('repeat-control').value;
+  const maxRepeat =
+    repeatControl === 'infinite' ? Infinity : parseInt(repeatControl);
+
+  if (state.currentRepeatCount < maxRepeat) {
+    _seekToCurrentQueueAyah();
+    return;
+  }
+
+  state.currentRepeatCount = 0;
+  state.currentPlayIndex++;
+
+  if (state.currentPlayIndex < state.playQueue.length) {
+    _playQueueItemAtIndex(state.currentPlayIndex);
+  } else {
+    state.currentPlayModeRepeatCount++;
+    if (state.currentPlayModeRepeatCount < maxRepeat) {
+      state.currentPlayIndex = 0;
+      state.currentRepeatCount = 0;
+      rebuildFullPlayQueue();
+      _playQueueItemAtIndex(0);
+    } else {
+      state.currentPlayModeRepeatCount = 0;
+      stopAudio();
+    }
+  }
+}
+
+/**
+ * Seek back to the start of the current queue ayah (used for repeat).
+ */
+function _seekToCurrentQueueAyah() {
+  const ayah = state.playQueue[state.currentPlayIndex];
+  if (!ayah || !state.currentSurahTiming) return;
+  const timing = getAyahTiming(state.currentSurahTiming, ayah.aya_no);
+  if (!timing) return;
+  state.audioPlayer.currentTime = timing.start_time / 1000;
+  state.currentAyahEndTime = timing.end_time;
+  startTimingWatcher();
+}
+
+/**
+ * Core: seek within the loaded surah MP3 to the ayah at queue[index].
+ * Loads a new surah file if the surah changes.
+ * Fetches timing data on demand (cached after first fetch).
+ */
+async function _playQueueItemAtIndex(index) {
+  if (index >= state.playQueue.length) {
+    stopAudio();
+    return;
+  }
+
+  const ayah = state.playQueue[index];
+  state.currentPlayIndex = index;
+
+  // Update UI immediately
+  state.currentAyah = ayah;
+  state.currentSura = ayah.sura_no;
+  saveSetting('currentAyah', ayah.aya_no);
+  saveSetting('currentSura', ayah.sura_no);
+  updateSidebarSelectors();
+  updatePageInfo(ayah);
+  highlightActiveAyah();
+  updateNavButtonStates();
+
+  // Navigate page if needed
+  const ayahElement = document.querySelector(
+    `[data-sura="${ayah.sura_no}"][data-ayah="${ayah.aya_no}"]`,
+  );
+  if (ayahElement) {
+    ayahElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } else {
+    const ayahPage = parseInt(ayah.page.split('-')[0]);
+    if (ayahPage !== state.currentPage) {
+      displayPage(ayahPage, true);
+      setTimeout(() => {
+        const el = activateAyahInDOM(ayah.sura_no, ayah.aya_no);
+        if (el) updateSidebarSelectors();
+      }, 300);
+    }
+  }
+
+  // Check surah availability for this reciter
+  if (!reciterHasSurah(state.selectedReciter, ayah.sura_no)) {
+    showToast(
+      `القارئ "${state.selectedReciter?.name || ''}" لا يتوفر على سورة رقم ${ayah.sura_no}`,
+    );
+    stopAudio();
+    return;
+  }
+
+  // Find matching timing read for this reciter (matched via folder_url == moshaf.server)
+  const timingRead = findTimingRead();
+
+  if (!timingRead) {
+    // No timing for this reciter — toast once per reciter+surah combo
+    const toastKey = `${state.selectedReciter?.id}_${ayah.sura_no}`;
+    if (state._noTimingToastKey !== toastKey) {
+      state._noTimingToastKey = toastKey;
+      showToast(
+        `⚠️ القارئ "${state.selectedReciter?.name || ''}" لا يدعم توقيت الآيات — ستُشغَّل السورة كاملة`,
+        6000,
+      );
+    }
+    CONSOLE_LOG.playingAyah(
+      state.selectedReciter,
+      state.currentRiwaya,
+      ayah,
+      buildSurahAudioUrl(ayah.sura_no),
+      null,
+    ); // DEBUG — remove with CONSOLE_LOG block
+    await _playSurahFromStart(ayah.sura_no);
+    return;
+  }
+
+  // Fetch timing for this surah (cached)
+  const timing = await fetchSurahTiming(timingRead.id, ayah.sura_no);
+
+  if (!timing || timing.length === 0) {
+    // Timing exists for this reciter but not this specific surah
+    const toastKey = `${state.selectedReciter?.id}_${ayah.sura_no}`;
+    if (state._noTimingToastKey !== toastKey) {
+      state._noTimingToastKey = toastKey;
+      showToast(
+        `⚠️ لا يتوفر توقيت آيات لهذه السورة مع هذا القارئ — ستُشغَّل السورة كاملة`,
+        6000,
+      );
+    }
+    CONSOLE_LOG.playingAyah(
+      state.selectedReciter,
+      state.currentRiwaya,
+      ayah,
+      buildSurahAudioUrl(ayah.sura_no),
+      null,
+    ); // DEBUG — remove with CONSOLE_LOG block
+    await _playSurahFromStart(ayah.sura_no);
+    return;
+  }
+
+  state.currentSurahTiming = timing;
+  const ayahTiming = getAyahTiming(timing, ayah.aya_no);
+
+  if (!ayahTiming) {
+    showToast('لم يتم العثور على توقيت هذه الآية');
+    stopAudio();
+    return;
+  }
+
+  state.currentAyahEndTime = ayahTiming.end_time;
+  const surahUrl = buildSurahAudioUrl(ayah.sura_no);
+  if (!surahUrl) {
+    stopAudio();
+    return;
+  }
+
+  CONSOLE_LOG.playingAyah(
+    state.selectedReciter,
+    state.currentRiwaya,
+    ayah,
+    surahUrl,
+    ayahTiming,
+  ); // DEBUG — remove with CONSOLE_LOG block
+
+  stopTimingWatcher();
+
+  const doSeekAndPlay = () => {
+    state.audioPlayer.playbackRate = parseFloat(
+      getEl('speed-control')?.value || '1',
+    );
+    state.audioPlayer.currentTime = ayahTiming.start_time / 1000;
+    state.audioPlayer
+      .play()
+      .then(() => {
+        startTimingWatcher();
+      })
+      .catch((err) => {
+        console.error('Playback error:', err);
+        state.currentPlayIndex++;
+        if (state.currentPlayIndex < state.playQueue.length)
+          _playQueueItemAtIndex(state.currentPlayIndex);
+      });
+  };
+
+  // Same surah already loaded? Just seek, no reload needed
+  const isSameSurah =
+    state.audioPlayer.src && state.audioPlayer.src === surahUrl;
+  if (isSameSurah) {
+    doSeekAndPlay();
+  } else {
+    state.audioPlayer.src = surahUrl;
+    state.audioPlayer.load();
+    const onCanSeek = () => {
+      state.audioPlayer.removeEventListener('canplay', onCanSeek);
+      doSeekAndPlay();
+    };
+    state.audioPlayer.addEventListener('canplay', onCanSeek);
+  }
+}
+
+/**
+ * Fallback: load and play the whole surah file from the beginning.
+ * Used when no timing data is available for this reciter.
+ */
+async function _playSurahFromStart(suraNo) {
+  const surahUrl = buildSurahAudioUrl(suraNo);
+  if (!surahUrl) {
+    stopAudio();
+    return;
+  }
+
+  state.currentSurahTiming = [];
+  state.currentAyahEndTime = null;
+  stopTimingWatcher();
+
+  state.audioPlayer.src = surahUrl;
+  state.audioPlayer.playbackRate = parseFloat(
+    getEl('speed-control')?.value || '1',
+  );
+  state.audioPlayer.load();
+
+  const onCanPlay = () => {
+    state.audioPlayer.removeEventListener('canplay', onCanPlay);
+    state.audioPlayer
+      .play()
+      .catch((err) => console.error('Playback error:', err));
+  };
+  state.audioPlayer.addEventListener('canplay', onCanPlay);
+}
 
 function initializeAudioPlayer() {
   state.audioPlayer = getEl('audio-player');
-
   if (!state.audioPlayer) return;
 
+  // 'ended' fires when the whole surah file finishes (no-timing fallback or last ayah)
   state.audioPlayer.addEventListener('ended', () => {
-    state.currentRepeatCount++;
+    stopTimingWatcher();
+    state.currentAyahEndTime = null;
 
-    const repeatControl = getEl('repeat-control').value;
-    const maxRepeat =
-      repeatControl === 'infinite' ? Infinity : parseInt(repeatControl);
-
-    if (state.currentRepeatCount < maxRepeat) {
-      state.audioPlayer.play();
-    } else {
-      state.currentRepeatCount = 0;
-      state.currentPlayIndex++;
-
-      if (state.currentPlayIndex < state.playQueue.length) {
-        playNextInQueue();
-      } else {
-        state.currentPlayModeRepeatCount++;
-
-        if (state.currentPlayModeRepeatCount < maxRepeat) {
-          state.currentPlayIndex = 0;
-          state.currentRepeatCount = 0;
-          rebuildFullPlayQueue();
-          playNextInQueue();
-        } else {
-          state.currentPlayModeRepeatCount = 0;
-          stopAudio();
+    // In fallback mode (no timing), the whole surah file just played.
+    // Skip all remaining ayahs of this surah in the queue so we don't
+    // reload and replay the same file for each one.
+    if (state.currentSurahTiming.length === 0 && state.playQueue.length > 0) {
+      const finishedSura = state.playQueue[state.currentPlayIndex]?.sura_no;
+      if (finishedSura != null) {
+        while (
+          state.currentPlayIndex < state.playQueue.length &&
+          state.playQueue[state.currentPlayIndex].sura_no === finishedSura
+        ) {
+          state.currentPlayIndex++;
         }
+        // Step back one — onAyahEnded() will increment it again
+        state.currentPlayIndex--;
       }
     }
+
+    onAyahEnded();
   });
 
   state.audioPlayer.addEventListener('play', () => {
@@ -782,27 +1143,26 @@ function initializeAudioPlayer() {
 }
 
 async function playAudio() {
-  state.selectedReciter = getEl('reciter-select').value;
+  const reciterSelect = getEl('reciter-select');
+  const selectedId = reciterSelect?.value;
 
-  if (!state.selectedReciter) {
+  if (!selectedId) {
     showToast('الرجاء اختيار القارئ');
     return;
   }
 
+  state.selectedReciter =
+    state.reciters.find((r) => String(r.id) === selectedId) || null;
+  if (!state.selectedReciter) {
+    showToast('القارئ غير متوفر');
+    return;
+  }
   if (!state.currentAyah) {
     showToast('الرجاء اختيار آية');
     return;
   }
 
-  // Check once whether local audio exists for this reciter+surah
-  const useLocal = await checkLocalAudioAvailable(
-    state.selectedReciter,
-    state.currentAyah.sura_no,
-  );
-  state.useLocalAudio = useLocal;
-
   buildPlayQueue();
-
   if (state.playQueue.length === 0) {
     showToast('لا توجد ملفات صوتية للتشغيل');
     return;
@@ -812,7 +1172,7 @@ async function playAudio() {
   state.currentRepeatCount = 0;
   state.currentPlayModeRepeatCount = 0;
 
-  playNextInQueue();
+  await _playQueueItemAtIndex(0);
 }
 
 function buildPlayQueue() {
@@ -830,145 +1190,60 @@ function buildPlayQueue() {
     case 'aya':
       if (state.currentAyah) state.playQueue.push(state.currentAyah);
       break;
-
     case 'page':
       state.playQueue = sliceFromCurrent(getAyahsOnPage(state.currentPage));
       break;
-
     case 'sura':
       state.playQueue = sliceFromCurrent(
-        state.quranData.filter((item) => item.sura_no === state.currentSura),
+        state.quranData.filter((i) => i.sura_no === state.currentSura),
       );
       break;
-
     case 'juz':
       state.playQueue = sliceFromCurrent(
-        state.quranData.filter((item) => item.jozz === state.currentJuz),
+        state.quranData.filter((i) => i.jozz === state.currentJuz),
       );
       break;
   }
 }
 
-/**
- * Rebuild the full play queue from the very beginning of the play mode
- * (used when repeating the whole queue after it finishes).
- */
 function rebuildFullPlayQueue() {
   state.playQueue = [];
   const playMode = getEl('play-mode').value;
-
   switch (playMode) {
     case 'aya':
       if (state.currentAyah) state.playQueue.push(state.currentAyah);
       break;
-
     case 'page':
       state.playQueue = getAyahsOnPage(state.currentPage);
       break;
-
     case 'sura':
       state.playQueue = state.quranData.filter(
-        (item) => item.sura_no === state.currentSura,
+        (i) => i.sura_no === state.currentSura,
       );
       break;
-
     case 'juz':
       state.playQueue = state.quranData.filter(
-        (item) => item.jozz === state.currentJuz,
+        (i) => i.jozz === state.currentJuz,
       );
       break;
   }
 }
 
+// Thin wrapper kept for compatibility
 function playNextInQueue() {
-  if (state.currentPlayIndex >= state.playQueue.length) {
-    stopAudio();
-    return;
-  }
-
-  const ayah = state.playQueue[state.currentPlayIndex];
-  state.selectedReciter = getEl('reciter-select')?.value || '';
-
-  // When crossing into a new surah during queue playback, re-check local availability
-  const cacheKey = `${state.selectedReciter}/${ayah.sura_no}`;
-  if (!(cacheKey in state.localAudioCache)) {
-    // Async re-check for new surah; temporarily assume same strategy
-    checkLocalAudioAvailable(state.selectedReciter, ayah.sura_no).then((ok) => {
-      state.useLocalAudio = ok;
-    });
-  } else {
-    state.useLocalAudio = state.localAudioCache[cacheKey];
-  }
-
-  let audioSrc;
-  if (state.useLocalAudio) {
-    audioSrc = buildAudioPath(state.selectedReciter, ayah.sura_no, ayah.aya_no);
-  } else {
-    audioSrc =
-      getFallbackAudioUrl(state.selectedReciter, ayah.sura_no, ayah.aya_no) ||
-      buildAudioPath(state.selectedReciter, ayah.sura_no, ayah.aya_no);
-  }
-
-  if (state.audioPlayer) {
-    state.audioPlayer.src = audioSrc;
-    state.audioPlayer.playbackRate = parseFloat(
-      getEl('speed-control')?.value || '1',
-    );
-    state.audioPlayer.play().catch((error) => {
-      console.error('Error playing audio:', error);
-      state.currentRepeatCount = 0;
-      state.currentPlayIndex++;
-      if (state.currentPlayIndex < state.playQueue.length) playNextInQueue();
-    });
-  }
-
-  state.currentAyah = ayah;
-  state.currentSura = ayah.sura_no;
-  saveSetting('currentAyah', ayah.aya_no);
-  saveSetting('currentSura', ayah.sura_no);
-
-  updateSidebarSelectors();
-  updatePageInfo(ayah);
-  highlightActiveAyah();
-  updateNavButtonStates();
-
-  // If the ayah is not on the current page, navigate to it
-  const ayahElement = document.querySelector(
-    `[data-sura="${ayah.sura_no}"][data-ayah="${ayah.aya_no}"]`,
-  );
-
-  if (ayahElement) {
-    ayahElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  } else {
-    const ayahPage = parseInt(ayah.page.split('-')[0]);
-    if (ayahPage !== state.currentPage) {
-      displayPage(ayahPage, true);
-      setTimeout(() => {
-        const el = activateAyahInDOM(ayah.sura_no, ayah.aya_no);
-        if (el) updateSidebarSelectors();
-      }, 300);
-    }
-  }
+  _playQueueItemAtIndex(state.currentPlayIndex);
 }
 
-/** Re-apply the active highlight to whichever ayah is current */
 function highlightActiveAyah() {
-  if (state.currentAyah) {
+  if (state.currentAyah)
     activateAyahInDOM(state.currentAyah.sura_no, state.currentAyah.aya_no);
-  }
 }
 
-/**
- * Jump to the first ayah of a page and start playback from there.
- * Used when navigating pages while audio is active.
- */
 function jumpToFirstAyahOfPage(pageNum, shouldPlay = false) {
   const pageData = getAyahsOnPage(pageNum);
   if (pageData.length === 0) return;
-
   const firstAyah = pageData[0];
 
-  // Stop current playback cleanly
   if (state.audioPlayer) {
     state.audioPlayer.pause();
     state.audioPlayer.src = '';
@@ -992,7 +1267,6 @@ function jumpToFirstAyahOfPage(pageNum, shouldPlay = false) {
   saveSetting('currentAyah', firstAyah.aya_no);
   saveSetting('currentSura', firstAyah.sura_no);
   saveSetting('currentJuz', firstAyah.jozz);
-
   updatePageInfo(firstAyah);
 
   setTimeout(() => {
@@ -1002,10 +1276,6 @@ function jumpToFirstAyahOfPage(pageNum, shouldPlay = false) {
   }, 100);
 }
 
-/**
- * Returns true if the player has an active src (playing OR paused mid-playback).
- * Used to detect "paused but was playing" state during navigation.
- */
 function hasActiveAudioSrc() {
   return !!(
     state.audioPlayer?.src &&
@@ -1014,12 +1284,8 @@ function hasActiveAudioSrc() {
   );
 }
 
-/**
- * Clear the audio player src and reset playback state without affecting
- * state.currentAyah. Called when navigating to a new ayah while paused,
- * so the next play press starts the NEW ayah instead of resuming the old one.
- */
 function clearAudioForNavigation() {
+  stopTimingWatcher();
   if (state.audioPlayer) {
     state.audioPlayer.pause();
     state.audioPlayer.src = '';
@@ -1029,11 +1295,14 @@ function clearAudioForNavigation() {
   state.currentPlayIndex = 0;
   state.currentRepeatCount = 0;
   state.currentPlayModeRepeatCount = 0;
+  state.currentAyahEndTime = null;
+  state.currentSurahTiming = [];
   updatePauseButton();
   syncBottomPlayIcon();
 }
 
 function stopAudio() {
+  stopTimingWatcher();
   if (state.audioPlayer) {
     state.audioPlayer.pause();
     state.audioPlayer.currentTime = 0;
@@ -1044,7 +1313,9 @@ function stopAudio() {
   state.currentRepeatCount = 0;
   state.currentPlayModeRepeatCount = 0;
   state.playQueue = [];
-
+  state.currentAyahEndTime = null;
+  state.currentSurahTiming = [];
+  state._noTimingToastKey = null;
   updatePauseButton();
   syncBottomPlayIcon();
   clearProgressHideTimeout();
@@ -1055,7 +1326,6 @@ function stopAudio() {
 
 function togglePauseResume() {
   if (!state.audioPlayer) return;
-
   const hasSrc =
     state.audioPlayer.src &&
     state.audioPlayer.src !== '' &&
@@ -1064,60 +1334,65 @@ function togglePauseResume() {
     if (state.currentAyah) playAudio();
     return;
   }
-
   if (state.audioPlayer.paused) {
+    // Resume: restart timing watcher if we have active timing
     state.audioPlayer.play().catch(() => {
       if (state.currentAyah) playAudio();
     });
+    if (state.currentAyahEndTime !== null) startTimingWatcher();
   } else {
+    stopTimingWatcher();
     state.audioPlayer.pause();
   }
 }
 
-/** Update the pause/resume button label to reflect current playback state */
 function updatePauseButton() {
   const pauseBtn = getEl('pause-btn');
   const isPaused = state.audioPlayer?.paused ?? true;
-
   const html =
     isPaused || !state.isPlaying
       ? '<i class="bi bi-play-fill"></i> استئناف'
       : '<i class="bi bi-pause-fill"></i> إيقاف مؤقت';
-
   if (pauseBtn) pauseBtn.innerHTML = html;
 }
 
-/** Switch the reciter while audio is actively playing or paused */
-async function changeReciterDuringPlayback(newReciter) {
+/**
+ * Change reciter during active/paused playback.
+ * Restarts playback from the current ayah's start_time using the new reciter's server.
+ */
+async function changeReciterDuringPlayback(newReciterId) {
   if (!state.currentAyah || !state.audioPlayer) return;
-
   const isActivelyPlaying = !state.audioPlayer.paused;
   const isPaused = state.audioPlayer.paused && hasActiveAudioSrc();
-
   if (!isActivelyPlaying && !isPaused) return;
 
+  state.selectedReciter =
+    state.reciters.find((r) => String(r.id) === newReciterId) || null;
+  if (!state.selectedReciter) return;
+
   const ayah = state.playQueue[state.currentPlayIndex] ?? state.currentAyah;
-  const useLocal = await checkLocalAudioAvailable(newReciter, ayah.sura_no);
-  state.useLocalAudio = useLocal;
 
-  const audioSrc = useLocal
-    ? buildAudioPath(newReciter, ayah.sura_no, ayah.aya_no)
-    : getFallbackAudioUrl(newReciter, ayah.sura_no, ayah.aya_no) ||
-      buildAudioPath(newReciter, ayah.sura_no, ayah.aya_no);
+  if (!reciterHasSurah(state.selectedReciter, ayah.sura_no)) {
+    showToast(`القارئ "${state.selectedReciter.name}" لا يتوفر على هذه السورة`);
+    stopAudio();
+    return;
+  }
 
-  state.audioPlayer.src = audioSrc;
-  state.audioPlayer.playbackRate = parseFloat(
-    getEl('speed-control')?.value || '1',
-  );
-
-  if (isActivelyPlaying) {
-    state.audioPlayer.play().catch((error) => {
-      console.error('Error playing audio with new reciter:', error);
-    });
+  // Rebuild queue index to point at correct ayah, then replay from current ayah
+  if (isActivelyPlaying || isPaused) {
+    stopAudio();
+    state.currentAyah = ayah;
+    state.currentSura = ayah.sura_no;
+    buildPlayQueue();
+    // Find this ayah's position in the new queue
+    const idx = state.playQueue.findIndex(
+      (a) => a.sura_no === ayah.sura_no && a.aya_no === ayah.aya_no,
+    );
+    state.currentPlayIndex = idx >= 0 ? idx : 0;
+    if (isActivelyPlaying) await _playQueueItemAtIndex(state.currentPlayIndex);
   }
 }
 
-/** Step playback speed up (+1) or down (-1) through the available speed options */
 function changeSpeed(direction) {
   const speedSelect = getEl('speed-control');
   const options = Array.from(speedSelect.options).map((o) =>
@@ -1128,26 +1403,17 @@ function changeSpeed(direction) {
     0,
     Math.min(options.length - 1, currentIndex + direction),
   );
-
-  if (newIndex === currentIndex) return; // already at min/max
-
+  if (newIndex === currentIndex) return;
   const newSpeed = options[newIndex];
   speedSelect.value = String(newSpeed);
   if (state.audioPlayer) state.audioPlayer.playbackRate = newSpeed;
   saveSetting('speed', String(newSpeed));
-
-  // Brief visual feedback on the speed selector
   speedSelect.style.transition = 'background-color 0.2s';
   speedSelect.style.backgroundColor = '#c8a96e44';
   setTimeout(() => (speedSelect.style.backgroundColor = ''), 400);
-
   syncBottomSpeedLabel();
 }
 
-/**
- * Navigate to an ayah: switch page if needed, update selectors,
- * highlight the ayah, and resume playback if audio was active.
- */
 function navigateToAyah(ayahData) {
   const targetPage = parseInt(ayahData.page.split('-')[0]);
   const wasPlaying = state.isPlaying;
@@ -1177,7 +1443,6 @@ function navigateToAyah(ayahData) {
 // ─── Event Listeners ──────────────────────────────────────────────────────────
 
 function initializeEventListeners() {
-  // Riwaya selector
   const riwayaSelect = getEl('riwaya-select');
   if (riwayaSelect) {
     riwayaSelect.addEventListener('change', (e) => {
@@ -1185,49 +1450,39 @@ function initializeEventListeners() {
     });
   }
 
-  // Surah selector
   getEl('surah-select').addEventListener('change', (e) => {
     if (state.isSwitchingRiwaya) return;
     const suraNo = parseInt(e.target.value);
     state.currentSura = suraNo;
-
     const firstAyah = state.quranData.find(
       (item) => item.sura_no === suraNo && item.aya_no === 1,
     );
-
     if (!firstAyah) return;
-
     const pageNum = parseInt(firstAyah.page.split('-')[0]);
     displayPage(pageNum, true);
     getEl('surah-select').value = suraNo;
     populateAyahSelector(suraNo);
-
     state.currentAyah = firstAyah;
     saveSetting('currentSura', suraNo);
     saveSetting('currentAyah', firstAyah.aya_no);
-
     const wasPlaying = state.isPlaying;
     const wasPaused = !wasPlaying && hasActiveAudioSrc();
     if (wasPlaying) stopAudio();
     else if (wasPaused) clearAudioForNavigation();
-
     setTimeout(() => {
       activateAyahInDOM(suraNo, 1);
       getEl('ayah-select').value = 1;
       updatePageInfo(firstAyah);
       updateNavButtonStates();
-
       if (wasPlaying && getEl('reciter-select').value) playAudio();
     }, 100);
   });
 
-  // Juz selector
   getEl('juz-select').addEventListener('change', (e) => {
     if (state.isSwitchingRiwaya) return;
     const juzNo = parseInt(e.target.value);
     state.currentJuz = juzNo;
     saveSetting('currentJuz', juzNo);
-
     const firstAyah = state.quranData.find((item) => item.jozz === juzNo);
     if (firstAyah) {
       const pageNum = parseInt(firstAyah.page.split('-')[0]);
@@ -1237,7 +1492,6 @@ function initializeEventListeners() {
     }
   });
 
-  // Page selector
   getEl('page-select').addEventListener('change', (e) => {
     if (state.isSwitchingRiwaya) return;
     const pageNum = parseInt(e.target.value);
@@ -1246,72 +1500,61 @@ function initializeEventListeners() {
     jumpToFirstAyahOfPage(pageNum, wasPlaying);
   });
 
-  // Ayah selector
   getEl('ayah-select').addEventListener('change', (e) => {
     const ayahNo = parseInt(e.target.value);
     if (!ayahNo) return;
-
     const ayahData = state.quranData.find(
       (item) => item.sura_no === state.currentSura && item.aya_no === ayahNo,
     );
-
     if (!ayahData) return;
-
     const wasPlaying = state.isPlaying;
     const wasPaused = !wasPlaying && hasActiveAudioSrc();
     const ayahPage = parseInt(ayahData.page.split('-')[0]);
     if (ayahPage !== state.currentPage) {
       displayPage(ayahPage, true);
       setTimeout(() => {
-        if (wasPlaying) {
-          selectAndPlayAyah(ayahData);
-        } else {
+        if (wasPlaying) selectAndPlayAyah(ayahData);
+        else {
           if (wasPaused) clearAudioForNavigation();
           setCurrentAyah(ayahData);
         }
       }, 200);
     } else {
-      if (wasPlaying) {
-        selectAndPlayAyah(ayahData);
-      } else {
+      if (wasPlaying) selectAndPlayAyah(ayahData);
+      else {
         if (wasPaused) clearAudioForNavigation();
         setCurrentAyah(ayahData);
       }
     }
   });
 
-  // Reciter selector
   getEl('reciter-select').addEventListener('change', (e) => {
-    const newReciter = e.target.value;
-    state.selectedReciter = newReciter;
-    saveSetting('reciter', newReciter);
-    changeReciterDuringPlayback(newReciter);
+    const newId = e.target.value;
+    state.selectedReciter =
+      state.reciters.find((r) => String(r.id) === newId) || null;
+    state._noTimingToastKey = null;
+    saveSetting('reciter', newId);
+    changeReciterDuringPlayback(newId);
   });
 
-  // Speed control
   getEl('speed-control').addEventListener('change', (e) => {
     const speed = e.target.value;
     if (state.audioPlayer) state.audioPlayer.playbackRate = parseFloat(speed);
     saveSetting('speed', speed);
   });
 
-  // Repeat control
   getEl('repeat-control').addEventListener('change', (e) => {
     saveSetting('repeat', e.target.value);
   });
-
-  // Play mode
   getEl('play-mode').addEventListener('change', (e) => {
     saveSetting('playMode', e.target.value);
   });
 
-  // Font size control
   getEl('font-size-control').addEventListener('change', (e) => {
     applyFontSize(e.target.value);
     saveSetting('fontSize', e.target.value);
   });
 
-  // Page navigation buttons
   getEl('prev-page').addEventListener('click', () => {
     if (state.currentPage > 1) {
       const newPage = state.currentPage - 1;
@@ -1330,29 +1573,21 @@ function initializeEventListeners() {
     }
   });
 
-  // Playback control buttons
   getEl('play-btn').addEventListener('click', playAudio);
   getEl('pause-btn').addEventListener('click', togglePauseResume);
   getEl('stop-btn').addEventListener('click', stopAudio);
 
-  // Keyboard shortcuts
   document.addEventListener('keydown', (e) => {
-    // Skip when the user is typing in a form element
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
 
-    // Space → play / pause
     if (e.code === 'Space') {
       e.preventDefault();
       const hasAudio = state.audioPlayer?.src && state.audioPlayer.src !== '';
-      if (hasAudio) {
-        togglePauseResume();
-      } else if (state.currentAyah) {
-        playAudio();
-      }
+      if (hasAudio) togglePauseResume();
+      else if (state.currentAyah) playAudio();
       return;
     }
 
-    // Number keys 0-9 → seek to that tenth of the audio (0 = 0%, 9 = 90%)
     const numMatch = e.code.match(/^(?:Digit|Numpad)([0-9])$/);
     if (
       numMatch &&
@@ -1361,12 +1596,11 @@ function initializeEventListeners() {
       state.audioPlayer.duration
     ) {
       e.preventDefault();
-      const percent = parseInt(numMatch[1]) / 10;
-      state.audioPlayer.currentTime = state.audioPlayer.duration * percent;
+      state.audioPlayer.currentTime =
+        state.audioPlayer.duration * (parseInt(numMatch[1]) / 10);
       return;
     }
 
-    // Arrow Left → next ayah (or first ayah of next surah if at end)
     if (e.code === 'ArrowLeft') {
       e.preventDefault();
       if (state.currentAyah) {
@@ -1375,22 +1609,19 @@ function initializeEventListeners() {
             item.sura_no === state.currentAyah.sura_no &&
             item.aya_no === state.currentAyah.aya_no + 1,
         );
-        if (nextAyah) {
-          navigateToAyah(nextAyah);
-        } else {
-          // End of surah — try first ayah of next surah
-          const nextSurahFirstAyah = state.quranData.find(
+        if (nextAyah) navigateToAyah(nextAyah);
+        else {
+          const n = state.quranData.find(
             (item) =>
               item.sura_no === state.currentAyah.sura_no + 1 &&
               item.aya_no === 1,
           );
-          if (nextSurahFirstAyah) navigateToAyah(nextSurahFirstAyah);
+          if (n) navigateToAyah(n);
         }
       }
       return;
     }
 
-    // Arrow Right → prev ayah (or last ayah of prev surah if at start)
     if (e.code === 'ArrowRight') {
       e.preventDefault();
       if (state.currentAyah) {
@@ -1399,29 +1630,23 @@ function initializeEventListeners() {
             item.sura_no === state.currentAyah.sura_no &&
             item.aya_no === state.currentAyah.aya_no - 1,
         );
-        if (prevAyah) {
-          navigateToAyah(prevAyah);
-        } else if (state.currentAyah.sura_no > 1) {
-          // Start of surah — go to last ayah of previous surah
+        if (prevAyah) navigateToAyah(prevAyah);
+        else if (state.currentAyah.sura_no > 1) {
           const prevSuraAyahs = state.quranData.filter(
             (item) => item.sura_no === state.currentAyah.sura_no - 1,
           );
-          if (prevSuraAyahs.length > 0) {
+          if (prevSuraAyahs.length)
             navigateToAyah(prevSuraAyahs[prevSuraAyahs.length - 1]);
-          }
         }
       }
       return;
     }
 
-    // + / = → increase playback speed
     if (e.code === 'Equal' || e.code === 'NumpadAdd') {
       e.preventDefault();
       changeSpeed(1);
       return;
     }
-
-    // - → decrease playback speed
     if (e.code === 'Minus' || e.code === 'NumpadSubtract') {
       e.preventDefault();
       changeSpeed(-1);
@@ -1441,7 +1666,6 @@ function closeFab() {
   fabDial.classList.remove('open');
   fabTrigger.setAttribute('aria-expanded', 'false');
 }
-// Sidebar button wired manually
 document
   .getElementById('fab-sidebar-btn')
   .addEventListener('click', function () {
@@ -1450,14 +1674,12 @@ document
     const bsOffcanvas = bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl);
     bsOffcanvas.show();
   });
-// About button
 document.getElementById('fab-about-btn').addEventListener('click', function () {
   closeFab();
   const aboutEl = document.getElementById('aboutModal');
   const bsModal = bootstrap.Modal.getOrCreateInstance(aboutEl);
   bsModal.show();
 });
-// Close FAB on Escape
 document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') closeFab();
 });
@@ -1473,55 +1695,39 @@ function updateThemeUI(isLight) {
   const icon = document.getElementById('theme-icon');
   const text = document.getElementById('theme-text');
   const fabIcon = document.getElementById('fab-theme-icon');
-
   if (icon)
     icon.className = isLight ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
-
   if (text) text.textContent = isLight ? 'الوضع النهاري' : 'الوضع الليلي';
-
   if (fabIcon)
     fabIcon.className = isLight ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
 }
 
-// Apply theme on load
 (function () {
   let saved = localStorage.getItem('theme');
-
-  // If no theme saved
   if (!saved) {
     saved = 'light';
     localStorage.setItem('theme', 'light');
   }
-
   const isLight = saved === 'light';
-
-  if (isLight) {
-    document.body.classList.add('light-mode');
-  }
-
+  if (isLight) document.body.classList.add('light-mode');
   updateThemeUI(isLight);
 })();
 
 // ─── Bottom Controls Bar ──────────────────────────────────────────────────────
 
-/** Keep the bottom speed label in sync with the sidebar speed selector */
 function syncBottomSpeedLabel() {
   const sel = getEl('speed-control');
   const label = getEl('bottom-speed-label');
   if (sel && label) label.textContent = parseFloat(sel.value) + 'x';
 }
 
-/** Sync the play/pause icon in the bottom bar to match actual playback state */
 function syncBottomPlayIcon() {
   const icon = getEl('bottom-play-icon');
   if (!icon) return;
   icon.className = state.isPlaying ? 'bi bi-pause-fill' : 'bi bi-play-fill';
 }
 
-/** Update disabled state of bottom nav buttons based on current ayah position */
 function updateNavButtonStates() {
-  const btns = document.querySelectorAll('.bottom-controls .ctrl-btn');
-  // We select by onclick attribute for reliability
   const prevSurahBtn = document.querySelector(
     '.ctrl-btn[onclick="bottomNavPrevSurah()"]',
   );
@@ -1536,10 +1742,9 @@ function updateNavButtonStates() {
   );
 
   if (!state.currentAyah) {
-    if (prevSurahBtn) prevSurahBtn.disabled = true;
-    if (prevAyahBtn) prevAyahBtn.disabled = true;
-    if (nextAyahBtn) nextAyahBtn.disabled = true;
-    if (nextSurahBtn) nextSurahBtn.disabled = true;
+    [prevSurahBtn, prevAyahBtn, nextAyahBtn, nextSurahBtn].forEach((b) => {
+      if (b) b.disabled = true;
+    });
     return;
   }
 
@@ -1550,7 +1755,6 @@ function updateNavButtonStates() {
     (i) => i.sura_no === sura && i.aya_no === aya - 1,
   );
   const hasPrevSurah = sura > 1;
-
   const hasNextAyah =
     !!state.quranData.find((i) => i.sura_no === sura && i.aya_no === aya + 1) ||
     sura < 114;
@@ -1562,18 +1766,13 @@ function updateNavButtonStates() {
   if (nextSurahBtn) nextSurahBtn.disabled = !hasNextSurah;
 }
 
-/** Bottom bar play/pause button handler */
 function bottomPlayPause() {
   const hasAudio = state.audioPlayer?.src && state.audioPlayer.src !== '';
-  if (hasAudio) {
-    togglePauseResume();
-  } else if (state.currentAyah) {
-    playAudio();
-  }
+  if (hasAudio) togglePauseResume();
+  else if (state.currentAyah) playAudio();
   setTimeout(syncBottomPlayIcon, 100);
 }
 
-/** Bottom bar — navigate to next ayah, or first ayah of next surah */
 function bottomNavNext() {
   if (!state.currentAyah) return;
   const next = state.quranData.find(
@@ -1591,7 +1790,6 @@ function bottomNavNext() {
   if (nextSura) navigateToAyah(nextSura);
 }
 
-/** Bottom bar — navigate to previous ayah, or last ayah of previous surah */
 function bottomNavPrev() {
   if (!state.currentAyah) return;
   const prev = state.quranData.find(
@@ -1612,7 +1810,6 @@ function bottomNavPrev() {
   }
 }
 
-/** Bottom bar — navigate to first ayah of previous surah */
 function bottomNavPrevSurah() {
   if (!state.currentAyah || state.currentAyah.sura_no <= 1) return;
   const firstAyah = state.quranData.find(
@@ -1621,7 +1818,6 @@ function bottomNavPrevSurah() {
   if (firstAyah) navigateToAyah(firstAyah);
 }
 
-/** Bottom bar — navigate to first ayah of next surah */
 function bottomNavNextSurah() {
   if (!state.currentAyah || state.currentAyah.sura_no >= 114) return;
   const firstAyah = state.quranData.find(
@@ -1630,10 +1826,8 @@ function bottomNavNextSurah() {
   if (firstAyah) navigateToAyah(firstAyah);
 }
 
-/** Wire up bottom bar sync listeners — called once after DOM + settings are ready */
 function initializeBottomControls() {
   syncBottomSpeedLabel();
-
   const player = getEl('audio-player');
   if (player) {
     player.addEventListener('play', () => {
@@ -1663,7 +1857,6 @@ function initializeBottomControls() {
       setAudioProgress(0);
     });
   }
-
   const speedSel = getEl('speed-control');
   if (speedSel) speedSel.addEventListener('change', syncBottomSpeedLabel);
 }
@@ -1680,22 +1873,18 @@ function clearProgressHideTimeout() {
   }
 }
 
-/** Start a requestAnimationFrame loop that keeps the strip in sync with audio */
 function startProgressRAF() {
   stopProgressRAF();
   const player = getEl('audio-player');
   if (!player) return;
-
   function frame() {
-    if (player.duration > 0) {
+    if (player.duration > 0)
       setAudioProgress(player.currentTime / player.duration);
-    }
     _progressRAFId = requestAnimationFrame(frame);
   }
   _progressRAFId = requestAnimationFrame(frame);
 }
 
-/** Cancel the running RAF loop */
 function stopProgressRAF() {
   if (_progressRAFId !== null) {
     cancelAnimationFrame(_progressRAFId);
@@ -1703,45 +1892,30 @@ function stopProgressRAF() {
   }
 }
 
-/**
- * Show or hide the audio progress strip.
- * @param {boolean} active
- */
 function setAudioProgressActive(active) {
   const strip = getEl('audio-progress-strip');
   if (strip) strip.classList.toggle('is-playing', active);
 }
 
-/**
- * Set the strip fill width directly.
- * @param {number} ratio — 0.0 to 1.0
- */
 function setAudioProgress(ratio) {
   const fill = getEl('audio-progress-fill');
   if (fill) fill.style.width = (Math.min(ratio, 1) * 100).toFixed(3) + '%';
 }
 
-// ─── Utilities ──────────────────────────────────────────────────────
-/** Fullscreen Toggle */
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
 function toggleFullscreen() {
   document.body.classList.toggle('fullscreen-mode');
 }
 
-/**
- * Starts the countdown timer and progress bar inside the modal.
- * Enables the close button when the timer reaches zero.
- */
 function startWarshModalTimer() {
   const bar = document.getElementById('warshProgressBar');
   const countdown = document.getElementById('warshCountdown');
   const closeBtn = document.getElementById('warshCloseBtn');
   const label = document.getElementById('warshTimerLabel');
-
   if (!bar || !closeBtn) return;
 
   let remaining = WARSH_TIMER_MS / 1000;
-
-  // Shrink the bar over exactly WARSH_TIMER_MS milliseconds
   requestAnimationFrame(() => {
     bar.style.width = '100%';
     requestAnimationFrame(() => {
@@ -1750,7 +1924,6 @@ function startWarshModalTimer() {
     });
   });
 
-  // Decrement the countdown every second
   const tick = setInterval(() => {
     remaining--;
     if (countdown) countdown.textContent = Math.max(remaining, 0);
@@ -1763,13 +1936,9 @@ function startWarshModalTimer() {
   }, 1000);
 }
 
-/**
- * Shows Warsh Maghribi Text Style Modal
- */
 function showWarshModal() {
   if (localStorage.getItem(WARSH_MODAL_KEY) === '1') return;
   if (state.currentRiwaya !== 'warsh') return;
-
   const modalEl = document.getElementById('warshInfoModal');
   if (!modalEl) return;
 
@@ -1778,19 +1947,17 @@ function showWarshModal() {
     keyboard: false,
   });
 
-  // Reset the progress bar and button state before showing
   const bar = document.getElementById('warshProgressBar');
   const btn = document.getElementById('warshCloseBtn');
   const lbl = document.getElementById('warshTimerLabel');
   const cnt = document.getElementById('warshCountdown');
+
   if (bar) {
     bar.style.transition = 'none';
     bar.style.width = '100%';
   }
-  if (btn) {
-    btn.classList.add('disabled');
-  }
-  // Persist seen state to localStorage when the modal is closed
+  if (btn) btn.classList.add('disabled');
+
   modalEl.addEventListener(
     'hidden.bs.modal',
     () => {
@@ -1801,15 +1968,11 @@ function showWarshModal() {
 
   modal.show();
 
-  // Start the timer once the modal is fully visible
   modalEl.addEventListener(
     'shown.bs.modal',
     () => {
-      // Re-enable the CSS transition that was removed before showing
       const b = document.getElementById('warshProgressBar');
-      if (b) {
-        b.style.transition = '';
-      }
+      if (b) b.style.transition = '';
       startWarshModalTimer();
     },
     { once: true },
