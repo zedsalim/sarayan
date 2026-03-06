@@ -155,6 +155,5 @@ assets/text/
 - **نص القرآن والخطوط:** [مجمع الملك فهد لطباعة المصحف الشريف (KFGQPC)](https://qurancomplex.gov.sa/quran-dev/)
   - خط ورش: `uthmanic_warsh_v21.ttf` (خط KFGQPC العثماني لرواية ورش)
   - خط حفص: `uthmanic_hafs_v20.ttf` (خط KFGQPC العثماني لرواية حفص)
-- **صوت ورش:** [mp3quran.net](https://mp3quran.net/) (ملفات MP3 مقطّعة بعدد 6,214 آية)
-- **صوت حفص:** [VerseByVerseQuran.com](https://www.versebyversequran.com/)، [EveryAyah.com](https://everyayah.com/)
+- **الصوت:** [mp3quran.net](https://mp3quran.net/), [VerseByVerseQuran.com](https://www.versebyversequran.com/)، [EveryAyah.com](https://everyayah.com/)
 - **إطار واجهة المستخدم:** Bootstrap 5 RTL

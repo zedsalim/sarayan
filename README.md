@@ -153,6 +153,5 @@ The `aya_no_marker` field contains the KFGQPC PUA glyph used to render the end-o
 - **Qur'an text & fonts:** [King Fahd Glorious Qur'an Printing Complex (KFGQPC)](https://qurancomplex.gov.sa/quran-dev/)
   - Warsh font: `uthmanic_warsh_v21.ttf` (KFGQPC Warsh Uthmanic script)
   - Hafs font: `uthmanic_hafs_v20.ttf` (KFGQPC Hafs Uthmanic script)
-- **Warsh audio:** [mp3quran.net](https://mp3quran.net/) (ayah-split MP3s, 6,214-ayah count)
-- **Hafs audio:** [VerseByVerseQuran.com](https://www.versebyversequran.com/), [EveryAyah.com](https://everyayah.com/)
+- **Audio:** [mp3quran.net](https://mp3quran.net/), [VerseByVerseQuran.com](https://www.versebyversequran.com/), [EveryAyah.com](https://everyayah.com/)
 - **UI framework:** Bootstrap 5 RTL
