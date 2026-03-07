@@ -1,19 +1,13 @@
 (function () {
   'use strict';
 
-  // ── Wait for quranData to be ready ──────────────────────────────────────
-  // script.js loads data asynchronously, so we poll until it's available.
+  // ── Wait for quranIndex to be ready ─────────────────────────────────────
+  // script.js loads the index asynchronously; poll until available.
 
-  let _qData = []; // local flat copy of quranData
   let _ready = false;
 
   function tryInit() {
-    if (
-      typeof state !== 'undefined' &&
-      state.quranData &&
-      state.quranData.length > 0
-    ) {
-      _qData = state.quranData;
+    if (typeof state !== 'undefined' && state.quranIndex) {
       _ready = true;
       buildSuraDropdown();
       buildPageDropdown();
@@ -23,80 +17,70 @@
   }
   tryInit();
 
-  // ── Helpers ─────────────────────────────────────────────────────────────
+  // ── Index helpers ────────────────────────────────────────────────────────
 
-  /** Unique sorted list of sura objects [{sura_no, sura_name_ar}] */
+  /** [{no, name}] for all 114 suras, in order */
   function getSuras() {
-    const seen = new Set();
-    return _qData
-      .filter((a) => {
-        if (seen.has(a.sura_no)) return false;
-        seen.add(a.sura_no);
-        return true;
-      })
-      .map((a) => ({ no: a.sura_no, name: a.sura_name_ar }));
+    const info = state.quranIndex?.sura_info || {};
+    return Object.keys(info)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .map((no) => ({ no, name: info[no].name_ar }));
   }
 
-  /** All pages that belong to a sura (sorted) */
+  /** First (and canonical) page of a sura — from the index directly */
+  function getFirstPageOfSura(suraNo) {
+    return parseInt(state.quranIndex?.sura_to_page?.[String(suraNo)]) || null;
+  }
+
+  /** All pages that contain a given sura.
+   *  page_to_suras is a map of pageNo → [suraNo, ...], so we invert it. */
   function getPagesForSura(suraNo) {
-    const pages = new Set();
-    _qData
-      .filter((a) => a.sura_no === suraNo)
-      .forEach((a) =>
-        String(a.page)
-          .split('-')
-          .forEach((p) => pages.add(parseInt(p.trim()))),
-      );
-    return [...pages].sort((a, b) => a - b);
+    const p2s = state.quranIndex?.page_to_suras || {};
+    return Object.keys(p2s)
+      .map(Number)
+      .filter((pg) => p2s[pg].includes(suraNo))
+      .sort((a, b) => a - b);
   }
 
-  /** All ayahs for a sura on a specific page */
-  function getAyahsForSuraOnPage(suraNo, pageNo) {
-    return _qData
-      .filter((a) => {
-        const pages = String(a.page)
-          .split('-')
-          .map((p) => parseInt(p.trim()));
-        return a.sura_no === suraNo && pages.includes(pageNo);
-      })
+  /** Sura numbers present on a given page */
+  function getSurasOnPage(pageNo) {
+    return state.quranIndex?.page_to_suras?.[String(pageNo)] || [];
+  }
+
+  /** Total ayah count for a sura (from index — no fetch needed) */
+  function getAyahCountForSura(suraNo) {
+    return state.quranIndex?.sura_info?.[String(suraNo)]?.ayah_count || 0;
+  }
+
+  // ── Async helpers (need page chunk) ──────────────────────────────────────
+
+  /** Ayah numbers for a sura on a specific page — fetches the chunk if needed */
+  async function getAyahsForSuraOnPage(suraNo, pageNo) {
+    const ayahs = await loadPageChunk(pageNo); // loadPageChunk is global in script.js
+    return ayahs
+      .filter((a) => a.sura_no === suraNo)
       .map((a) => a.aya_no)
       .sort((a, b) => a - b);
   }
 
-  /** First sura on a given page */
-  function getFirstSuraOnPage(pageNo) {
-    const hit = _qData.find((a) => {
-      const pages = String(a.page)
-        .split('-')
-        .map((p) => parseInt(p.trim()));
-      return pages.includes(pageNo);
-    });
-    return hit ? hit.sura_no : null;
-  }
-
-  /** First page of a sura */
-  function getFirstPageOfSura(suraNo) {
-    const hit = _qData.find((a) => a.sura_no === suraNo);
-    return hit ? parseInt(String(hit.page).split('-')[0]) : null;
-  }
-
-  /** First ayah of a sura on a page */
-  function getFirstAyahOfSuraOnPage(suraNo, pageNo) {
-    const list = getAyahsForSuraOnPage(suraNo, pageNo);
+  /** First ayah of a sura on a page — fetches chunk; falls back to 1 */
+  async function getFirstAyahOfSuraOnPage(suraNo, pageNo) {
+    const list = await getAyahsForSuraOnPage(suraNo, pageNo);
     return list.length > 0 ? list[0] : 1;
   }
 
-  // ── Populate helpers ────────────────────────────────────────────────────
+  // ── Populate helpers ─────────────────────────────────────────────────────
 
   function buildSuraDropdown() {
     const sel = document.getElementById('r-sura-ar');
     if (!sel) return;
     const cur = sel.value;
     sel.innerHTML = '<option value="" disabled>اختر السورة...</option>';
-    getSuras().forEach((s) => {
+    getSuras().forEach(({ no, name }) => {
       const opt = document.createElement('option');
-      opt.value = s.no;
-      opt.textContent = `${s.no}. ${s.name}`;
+      opt.value = no;
+      opt.textContent = `${no}. ${name}`;
       sel.appendChild(opt);
     });
     if (cur) sel.value = cur;
@@ -118,96 +102,86 @@
       opt.textContent = `صفحة ${p}`;
       sel.appendChild(opt);
     });
-    // try to restore previous value, else leave blank
     if (cur && [...sel.options].some((o) => o.value === String(cur)))
       sel.value = cur;
   }
 
-  function buildAyahDropdown(suraNo, pageNo) {
+  async function buildAyahDropdown(suraNo, pageNo) {
     const sel = document.getElementById('r-aya');
     if (!sel) return;
     sel.innerHTML = '<option value="" disabled>اختر الآية...</option>';
     if (!suraNo || !pageNo) return;
 
-    const ayahs = getAyahsForSuraOnPage(suraNo, pageNo);
+    let ayahs = await getAyahsForSuraOnPage(suraNo, pageNo);
+
+    // Fallback: if the chunk had none for this sura (shouldn't happen), use full count
     if (ayahs.length === 0) {
-      // fallback: all ayahs of sura
-      _qData
-        .filter((a) => a.sura_no === suraNo)
-        .map((a) => a.aya_no)
-        .forEach((n) => {
-          const opt = document.createElement('option');
-          opt.value = n;
-          opt.textContent = `آية ${n}`;
-          sel.appendChild(opt);
-        });
-    } else {
-      ayahs.forEach((n) => {
-        const opt = document.createElement('option');
-        opt.value = n;
-        opt.textContent = `آية ${n}`;
-        sel.appendChild(opt);
-      });
+      const count = getAyahCountForSura(suraNo);
+      ayahs = Array.from({ length: count }, (_, i) => i + 1);
     }
+
+    ayahs.forEach((n) => {
+      const opt = document.createElement('option');
+      opt.value = n;
+      opt.textContent = `آية ${n}`;
+      sel.appendChild(opt);
+    });
   }
 
   // ── Cross-link change events ─────────────────────────────────────────────
 
-  // When SURA changes → update page list, set first page, update ayahs
-  document.getElementById('r-sura-ar').addEventListener('change', function () {
-    const suraNo = parseInt(this.value);
-    clearFieldError('r-sura-ar');
+  // SURA changes → update page list, set first page, update ayahs
+  document
+    .getElementById('r-sura-ar')
+    .addEventListener('change', async function () {
+      const suraNo = parseInt(this.value);
+      clearFieldError('r-sura-ar');
 
-    const firstPage = getFirstPageOfSura(suraNo);
-    buildPageDropdown(suraNo);
-    if (firstPage) document.getElementById('r-page').value = firstPage;
-    clearFieldError('r-page');
+      const firstPage = getFirstPageOfSura(suraNo);
+      buildPageDropdown(suraNo);
+      if (firstPage) document.getElementById('r-page').value = firstPage;
+      clearFieldError('r-page');
 
-    const pg = parseInt(document.getElementById('r-page').value);
-    buildAyahDropdown(suraNo, pg);
-    const firstAyah = getFirstAyahOfSuraOnPage(suraNo, pg);
-    if (firstAyah) document.getElementById('r-aya').value = firstAyah;
-    clearFieldError('r-aya');
-  });
-
-  // When PAGE changes → find first sura on that page, rebuild ayahs
-  document.getElementById('r-page').addEventListener('change', function () {
-    const pageNo = parseInt(this.value);
-    clearFieldError('r-page');
-
-    const curSura = parseInt(document.getElementById('r-sura-ar').value);
-
-    // If currently selected sura exists on this page, keep it; otherwise switch to first sura of page
-    const suraOnPage = _qData.some((a) => {
-      const pages = String(a.page)
-        .split('-')
-        .map((p) => parseInt(p.trim()));
-      return a.sura_no === curSura && pages.includes(pageNo);
+      const pg = parseInt(document.getElementById('r-page').value);
+      await buildAyahDropdown(suraNo, pg);
+      const firstAyah = await getFirstAyahOfSuraOnPage(suraNo, pg);
+      if (firstAyah) document.getElementById('r-aya').value = firstAyah;
+      clearFieldError('r-aya');
     });
 
-    let targetSura = curSura;
-    if (!suraOnPage) {
-      targetSura = getFirstSuraOnPage(pageNo);
-      if (targetSura) {
-        document.getElementById('r-sura-ar').value = targetSura;
-        clearFieldError('r-sura-ar');
+  // PAGE changes → keep sura if it's on this page, else switch to first sura of page
+  document
+    .getElementById('r-page')
+    .addEventListener('change', async function () {
+      const pageNo = parseInt(this.value);
+      clearFieldError('r-page');
+
+      const curSura = parseInt(document.getElementById('r-sura-ar').value);
+      const surasOnPage = getSurasOnPage(pageNo);
+
+      let targetSura = curSura;
+      if (!surasOnPage.includes(curSura)) {
+        targetSura = surasOnPage[0] || curSura;
+        if (targetSura) {
+          document.getElementById('r-sura-ar').value = targetSura;
+          clearFieldError('r-sura-ar');
+        }
       }
-    }
 
-    buildAyahDropdown(targetSura, pageNo);
-    const firstAyah = getFirstAyahOfSuraOnPage(targetSura, pageNo);
-    if (firstAyah) document.getElementById('r-aya').value = firstAyah;
-    clearFieldError('r-aya');
-  });
+      await buildAyahDropdown(targetSura, pageNo);
+      const firstAyah = await getFirstAyahOfSuraOnPage(targetSura, pageNo);
+      if (firstAyah) document.getElementById('r-aya').value = firstAyah;
+      clearFieldError('r-aya');
+    });
 
-  // When AYA changes → just clear error
+  // AYA changes → just clear error
   document.getElementById('r-aya').addEventListener('change', function () {
     clearFieldError('r-aya');
   });
 
   // ── Pre-fill from state ──────────────────────────────────────────────────
 
-  window.prefillReportModal = function () {
+  window.prefillReportModal = async function () {
     if (!_ready) {
       setTimeout(window.prefillReportModal, 300);
       return;
@@ -215,44 +189,41 @@
 
     try {
       const s = typeof state !== 'undefined' ? state : null;
-      const ayah = s && s.currentAyah ? s.currentAyah : null;
+      const ayah = s?.currentAyah || null;
 
-      const suraNo = ayah
-        ? ayah.sura_no
-        : parseInt(localStorage.getItem('currentSura')) || null;
-      const ayaNo = ayah
-        ? ayah.aya_no
-        : parseInt(localStorage.getItem('currentAyah')) || null;
-      const pageNo = ayah
-        ? parseInt(String(ayah.page).split('-')[0])
-        : parseInt(localStorage.getItem('currentPage')) || null;
+      const suraNo =
+        ayah?.sura_no ?? parseInt(localStorage.getItem('currentSura')) ?? null;
+      const ayaNo =
+        ayah?.aya_no ?? parseInt(localStorage.getItem('currentAyah')) ?? null;
+      // ayah.page is stored as zero-padded string ("001") after lazy migration
+      const pageNo = ayah?.page
+        ? parseInt(ayah.page)
+        : (parseInt(localStorage.getItem('currentPage')) ?? null);
 
       if (!suraNo) return;
 
-      // 0. Set riwaya from state
-      const riwaya =
-        (typeof state !== 'undefined' && state.currentRiwaya) ||
-        localStorage.getItem('riwaya') ||
-        null;
+      // 0. Riwaya
+      const riwaya = s?.currentRiwaya || localStorage.getItem('riwaya') || null;
       if (riwaya) {
         document.getElementById('r-riwaya').value = riwaya;
         clearFieldError('r-riwaya');
       }
 
-      // 1. Set sura
+      // 1. Sura
       document.getElementById('r-sura-ar').value = suraNo;
       clearFieldError('r-sura-ar');
 
-      // 2. Rebuild page dropdown for this sura, then set page
+      // 2. Page dropdown for this sura, then set page
       buildPageDropdown(suraNo);
-      if (pageNo) {
-        document.getElementById('r-page').value = pageNo;
+      const targetPage = pageNo || getFirstPageOfSura(suraNo);
+      if (targetPage) {
+        document.getElementById('r-page').value = targetPage;
         clearFieldError('r-page');
       }
 
-      // 3. Rebuild ayah dropdown, then set ayah
-      const pg = pageNo || getFirstPageOfSura(suraNo);
-      buildAyahDropdown(suraNo, pg);
+      // 3. Ayah dropdown, then set ayah
+      const pg = targetPage || getFirstPageOfSura(suraNo);
+      await buildAyahDropdown(suraNo, pg);
       if (ayaNo) {
         document.getElementById('r-aya').value = ayaNo;
         clearFieldError('r-aya');
@@ -322,7 +293,7 @@
     return true;
   }
 
-  // Live validation on text/email/textarea fields only
+  // Live validation on text/email/textarea
   ['r-email', 'r-subject', 'r-details'].forEach((id) => {
     const el = document.getElementById(id);
     if (el) {
@@ -346,7 +317,6 @@
       const status = document.getElementById('r-status');
       status.style.display = 'none';
       status.className = 'report-status';
-      // Rebuild dropdowns to initial state
       if (_ready) {
         buildPageDropdown();
         document.getElementById('r-aya').innerHTML =
@@ -392,10 +362,11 @@
       status.className = 'report-status';
 
       try {
-        // Resolve sura_name_ar from selected sura_no
+        // Resolve sura_name_ar from index (no quranData scan needed)
         const suraNo = parseInt(document.getElementById('r-sura-ar').value);
-        const suraData = _qData.find((a) => a.sura_no === suraNo);
-        const suraAr = suraData ? suraData.sura_name_ar : String(suraNo);
+        const suraAr =
+          state.quranIndex?.sura_info?.[String(suraNo)]?.name_ar ||
+          String(suraNo);
 
         const payload = {
           email: document.getElementById('r-email').value.trim(),
